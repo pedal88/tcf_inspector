@@ -2,86 +2,226 @@
 
 {% block title %}Vendor History - TCF Inspector{% endblock %}
 
+{% block head %}
+<!-- Add Select2 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+{% endblock %}
+
 {% block content %}
 <div class="card">
     <div class="card-header">
-        <h2>Vendor History - {{ vendor.name }}</h2>
+        <h2>{% if vendor %}Vendor History - {{ vendor.name }}{% else %}Select Vendor{% endif %}</h2>
     </div>
     <div class="card-body">
-        <div class="timeline">
-            {% for snapshot in history %}
-            <div class="card mb-3">
-                <div class="card-header">
-                    <h5 class="mb-0">{{ snapshot.snapshot_date.strftime('%Y-%m-%d %H:%M:%S') }}</h5>
+        {% if error %}
+        <div class="alert alert-danger">{{ error }}</div>
+        {% endif %}
+
+        {% if show_selection or not vendor %}
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <input type="text" 
+                           class="form-control" 
+                           id="vendorSearch" 
+                           placeholder="Search vendors..."
+                           autocomplete="off">
                 </div>
-                <div class="card-body">
-                    {% if snapshot.changes %}
-                    <h6>Changes from previous version:</h6>
-                    <ul class="list-group">
-                        {% for change in snapshot.changes %}
-                        <li class="list-group-item">
-                            <span class="badge {% if change.type == 'added' %}bg-success{% elif change.type == 'removed' %}bg-danger{% else %}bg-info{% endif %}">
-                                {{ change.type }}
-                            </span>
-                            {{ change.description }}
-                        </li>
+                <div class="input-group">
+                    <select class="form-select" id="vendorSelect" size="10">
+                        <option value="">Select a vendor...</option>
+                        {% for v in vendors %}
+                        <option value="{{ v.id }}">{{ v.name }}</option>
                         {% endfor %}
-                    </ul>
-                    {% else %}
-                    <p class="text-muted">Initial version or no changes detected</p>
-                    {% endif %}
-                    
-                    <div class="mt-3">
-                        <button class="btn btn-sm btn-outline-primary" 
-                                type="button" 
-                                data-bs-toggle="collapse" 
-                                data-bs-target="#snapshot-{{ loop.index }}">
-                            View Full Data
-                        </button>
-                        <div class="collapse mt-2" id="snapshot-{{ loop.index }}">
-                            <pre class="bg-light p-3 rounded"><code>{{ snapshot.snapshot_data | tojson(indent=2) }}</code></pre>
-                        </div>
-                    </div>
+                    </select>
+                    <button type="button" class="btn btn-primary" id="viewHistoryBtn" disabled>View History</button>
                 </div>
             </div>
-            {% endfor %}
         </div>
+        {% endif %}
+
+        {% if vendor and history %}
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Version</th>
+                        <th>Changes</th>
+                        {% for purpose in purposes %}
+                        <th>
+                            <div>P{{ purpose.id }}</div>
+                            <div class="small text-muted">{{ purpose.name }}</div>
+                        </th>
+                        {% endfor %}
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Current State Row -->
+                    <tr class="table-info">
+                        <td>Current</td>
+                        <td>Current</td>
+                        <td>
+                            <small class="text-muted">Current state</small>
+                        </td>
+                        {% for purpose in purposes %}
+                        <td>
+                            {% if purpose.id|string in vendor.purposes %}
+                            <span class="badge bg-success">✓</span>
+                            {% else %}
+                            <span class="badge bg-secondary">·</span>
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary" 
+                                    type="button" 
+                                    data-bs-toggle="collapse" 
+                                    data-bs-target="#details-current">
+                                View Details
+                            </button>
+                        </td>
+                    </tr>
+                    <tr class="collapse" id="details-current">
+                        <td colspan="{{ purposes|length + 5 }}">
+                            <pre class="bg-light p-3 rounded"><code>{{ vendor | tojson(indent=2) }}</code></pre>
+                        </td>
+                    </tr>
+
+                    <!-- Historical Entries -->
+                    {% for entry in history %}
+                    <tr>
+                        <td>{{ entry.date }}</td>
+                        <td>{{ entry.version }}</td>
+                        <td>
+                            {% if entry.changes.added_purposes %}
+                            <div class="text-success">
+                                <small>Added: P{{ entry.changes.added_purposes|join(', P') }}</small>
+                            </div>
+                            {% endif %}
+                            {% if entry.changes.removed_purposes %}
+                            <div class="text-danger">
+                                <small>Removed: P{{ entry.changes.removed_purposes|join(', P') }}</small>
+                            </div>
+                            {% endif %}
+                            {% if not entry.changes.added_purposes and not entry.changes.removed_purposes %}
+                            <small class="text-muted">Initial version</small>
+                            {% endif %}
+                        </td>
+                        {% for purpose in purposes %}
+                        <td>
+                            {% set purpose_id = purpose.id|string %}
+                            {% if purpose_id in entry.purposes %}
+                                {% if purpose_id in entry.changes.added_purposes %}
+                                <span class="badge bg-success">+</span>
+                                {% else %}
+                                <span class="badge bg-success">✓</span>
+                                {% endif %}
+                            {% else %}
+                                {% if purpose_id in entry.changes.removed_purposes %}
+                                <span class="badge bg-danger">-</span>
+                                {% else %}
+                                <span class="badge bg-secondary">·</span>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary" 
+                                    type="button" 
+                                    data-bs-toggle="collapse" 
+                                    data-bs-target="#details-{{ loop.index }}">
+                                View Details
+                            </button>
+                        </td>
+                    </tr>
+                    <tr class="collapse" id="details-{{ loop.index }}">
+                        <td colspan="{{ purposes|length + 5 }}">
+                            <pre class="bg-light p-3 rounded"><code>{{ entry.data | tojson(indent=2) }}</code></pre>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}
 
 {% block extra_css %}
 <style>
-.timeline {
-    position: relative;
-    padding: 20px 0;
+.badge {
+    width: 24px;
+    height: 24px;
+    line-height: 24px;
+    font-size: 14px;
+    padding: 0;
 }
 
-.timeline::before {
-    content: '';
-    position: absolute;
-    left: 50px;
-    top: 0;
-    bottom: 0;
-    width: 2px;
-    background: #dee2e6;
+.table td {
+    vertical-align: middle;
 }
 
-.card {
-    margin-left: 70px;
+#vendorSelect {
+    height: auto;
+    min-height: 200px;
 }
 
-.card::before {
-    content: '';
-    position: absolute;
-    left: -35px;
-    top: 20px;
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    background: #007bff;
-    border: 3px solid #fff;
-    box-shadow: 0 0 0 2px #007bff;
+#vendorSelect option {
+    padding: 8px 12px;
+}
+
+.form-inline {
+    margin-bottom: 1rem;
 }
 </style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const vendorSearch = document.getElementById('vendorSearch');
+    const vendorSelect = document.getElementById('vendorSelect');
+    const viewHistoryBtn = document.getElementById('viewHistoryBtn');
+    
+    // Store all options for filtering
+    const allOptions = Array.from(vendorSelect.options);
+    
+    // Filter vendors based on search input
+    function filterVendors() {
+        const searchTerm = vendorSearch.value.toLowerCase();
+        const filteredOptions = allOptions.filter(option => 
+            option.text.toLowerCase().includes(searchTerm)
+        );
+        
+        // Clear current options
+        vendorSelect.innerHTML = '';
+        
+        // Add filtered options back
+        filteredOptions.forEach(option => vendorSelect.add(option.cloneNode(true)));
+        
+        // Update button state
+        viewHistoryBtn.disabled = !vendorSelect.value;
+    }
+    
+    // Handle search input
+    vendorSearch.addEventListener('input', filterVendors);
+    
+    // Handle selection changes
+    vendorSelect.addEventListener('change', function() {
+        viewHistoryBtn.disabled = !this.value;
+    });
+    
+    // Handle button click
+    viewHistoryBtn.addEventListener('click', function() {
+        const selectedValue = vendorSelect.value;
+        if (selectedValue) {
+            window.location.href = "{{ url_for('main.vendor_history', vendor_id='') }}" + selectedValue;
+        }
+    });
+});
+</script>
 {% endblock %} 

@@ -6,8 +6,28 @@
 <div class="card">
     <div class="card-header">
         <h2>Vendor Purposes Table</h2>
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <form method="GET" class="form-inline">
+                    <div class="input-group">
+                        <select name="file" class="form-select" id="fileSelect">
+                            <option value="">Select a vendor list file...</option>
+                            {% for file in available_files %}
+                            <option value="{{ file }}" {% if selected_file == file %}selected{% endif %}>
+                                {{ file }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit" class="btn btn-primary">Load</button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
     <div class="card-body">
+        {% if error %}
+        <div class="alert alert-danger">{{ error }}</div>
+        {% else %}
         <div class="table-responsive">
             <table class="table table-striped">
                 <thead>
@@ -15,7 +35,10 @@
                         <th>Vendor ID</th>
                         <th>Name</th>
                         {% for purpose in purposes %}
-                        <th>{{ purpose.name }}</th>
+                        <th>
+                            <div>P{{ purpose.id }}</div>
+                            <div class="small text-muted">{{ purpose.name }}</div>
+                        </th>
                         {% endfor %}
                         <th>Actions</th>
                     </tr>
@@ -43,6 +66,7 @@
                 </tbody>
             </table>
         </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}
