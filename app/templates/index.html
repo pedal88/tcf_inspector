@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}TCF Inspector - Home{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row mb-5">
+        <div class="col-lg-8 mx-auto text-center">
+            <h1 class="display-4 mb-4">TCF Inspector</h1>
+            <p class="lead text-muted">
+                Explore and analyze IAB Europe's Transparency & Consent Framework (TCF) vendor data
+            </p>
+        </div>
+    </div>
+
+    <div class="row mb-5">
+        <div class="col-lg-10 mx-auto">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h2 class="card-title mb-4">What is TCF?</h2>
+                    <p>
+                        The Transparency and Consent Framework (TCF) is a digital advertising industry standard created by IAB Europe. 
+                        It enables websites and apps to inform users about how their personal data is being processed and obtain 
+                        their consent for various data processing purposes.
+                    </p>
+                    <h3 class="h5 mt-4">Key Components:</h3>
+                    <ul class="list-group list-group-flush mt-3">
+                        <li class="list-group-item">
+                            <strong>Vendors:</strong> Companies that process user data for advertising and measurement purposes
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Purposes:</strong> Different ways that vendors can process user data (e.g., personalized ads, content measurement)
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Legal Basis:</strong> The legal grounds under GDPR for processing user data (consent or legitimate interest)
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h3 class="h5 card-title">Vendor Table</h3>
+                    <p class="card-text">View all registered vendors and their declared purposes in an easy-to-read table format.</p>
+                    <a href="{{ url_for('main.vendor_table') }}" class="btn btn-primary">View Vendors</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h3 class="h5 card-title">Compare Vendors</h3>
+                    <p class="card-text">Compare two vendors side by side to see differences in their declared purposes and features.</p>
+                    <a href="{{ url_for('main.vendor_compare') }}" class="btn btn-primary">Compare</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h3 class="h5 card-title">Version History</h3>
+                    <p class="card-text">Track changes in vendor declarations over time with our historical data tracking.</p>
+                    <a href="#" class="btn btn-primary disabled">Coming Soon</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-5">
+        <div class="col-lg-10 mx-auto">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h2 class="card-title mb-4">About This Tool</h2>
+                    <p>
+                        TCF Inspector helps you monitor and analyze vendor declarations in the TCF framework. Key features include:
+                    </p>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">✓ Automatic updates every 10 minutes</li>
+                        <li class="mb-2">✓ Historical version tracking</li>
+                        <li class="mb-2">✓ Vendor comparison tools</li>
+                        <li class="mb-2">✓ Purpose visualization</li>
+                    </ul>
+                    <p class="mt-4">
+                        <strong>Data Source:</strong> All vendor data is fetched directly from the official 
+                        <a href="https://vendor-list.consensu.org/v2/vendor-list.json" target="_blank">IAB Europe Global Vendor List</a>.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.card {
+    transition: transform 0.2s;
+}
+.card:hover {
+    transform: translateY(-5px);
+}
+.list-group-item {
+    border-left: none;
+    border-right: none;
+}
+</style>
+{% endblock %} 

@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}Compare Vendors - TCF Inspector{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h2>Compare Vendors</h2>
+    </div>
+    <div class="card-body">
+        <form id="compareForm" class="mb-4">
+            <div class="row">
+                <div class="col-md-5">
+                    <select class="form-select" id="vendor1" name="vendor1" required>
+                        <option value="">Select Vendor 1</option>
+                        {% for vendor in vendors %}
+                        <option value="{{ vendor.id }}">{{ vendor.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-5">
+                    <select class="form-select" id="vendor2" name="vendor2" required>
+                        <option value="">Select Vendor 2</option>
+                        {% for vendor in vendors %}
+                        <option value="{{ vendor.id }}">{{ vendor.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">Compare</button>
+                </div>
+            </div>
+        </form>
+
+        <div id="comparison-results" class="d-none">
+            <h3 class="mb-3">Comparison Results</h3>
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Feature</th>
+                            <th id="vendor1-name">Vendor 1</th>
+                            <th id="vendor2-name">Vendor 2</th>
+                        </tr>
+                    </thead>
+                    <tbody id="comparison-body">
+                        <!-- Populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const compareForm = document.getElementById('compareForm');
+    const resultsDiv = document.getElementById('comparison-results');
+    
+    compareForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const vendor1 = document.getElementById('vendor1').value;
+        const vendor2 = document.getElementById('vendor2').value;
+        
+        try {
+            const response = await fetch(`/vendor/compare?vendor1=${vendor1}&vendor2=${vendor2}`);
+            const data = await response.json();
+            
+            if (response.ok) {
+                displayComparison(data);
+            } else {
+                alert(data.error || 'Error comparing vendors');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error comparing vendors');
+        }
+    });
+    
+    function displayComparison(data) {
+        resultsDiv.classList.remove('d-none');
+        // Update vendor names
+        document.getElementById('vendor1-name').textContent = data.vendors[0].name;
+        document.getElementById('vendor2-name').textContent = data.vendors[1].name;
+        
+        // Clear and populate comparison table
+        const tbody = document.getElementById('comparison-body');
+        tbody.innerHTML = '';
+        
+        // Compare purposes
+        for (const purpose of data.purposes) {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${purpose.name}</td>
+                <td>${data.vendors[0].purposes.includes(purpose.id) ? '✓' : '-'}</td>
+                <td>${data.vendors[1].purposes.includes(purpose.id) ? '✓' : '-'}</td>
+            `;
+            tbody.appendChild(row);
+        }
+    }
+});
+</script>
+{% endblock %} 

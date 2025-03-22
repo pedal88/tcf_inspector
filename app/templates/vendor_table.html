@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Vendor Table - TCF Inspector{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h2>Vendor Purposes Table</h2>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Vendor ID</th>
+                        <th>Name</th>
+                        {% for purpose in purposes %}
+                        <th>{{ purpose.name }}</th>
+                        {% endfor %}
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for vendor in vendors %}
+                    <tr>
+                        <td>{{ vendor.id }}</td>
+                        <td>{{ vendor.name }}</td>
+                        {% for purpose in purposes %}
+                        <td>
+                            {% if purpose.id in vendor.purposes %}
+                            <span class="badge bg-success">✓</span>
+                            {% else %}
+                            <span class="badge bg-secondary">-</span>
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+                        <td>
+                            <a href="{{ url_for('main.vendor_history', vendor_id=vendor.id) }}" 
+                               class="btn btn-sm btn-info">History</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add any table-specific JavaScript here
+});
+</script>
+{% endblock %} 
