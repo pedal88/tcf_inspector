@@ -13,49 +13,91 @@
         {% endif %}
 
         <form method="GET" class="mb-4">
-            <div class="row">
-                <div class="col-md-5">
-                    <select class="form-select" id="vendor1" name="vendor1" required>
-                        <option value="">Select Vendor 1</option>
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label for="vendor1" class="form-label">First Vendor</label>
+                    <select class="form-select vendor-select" id="vendor1" name="vendor1" required>
+                        <option value="">Select a vendor...</option>
                         {% for vendor in vendors %}
                         <option value="{{ vendor.id }}" {% if vendor1 and vendor.id == vendor1.vendor_id|string %}selected{% endif %}>
-                            {{ vendor.name }}
+                            {{ vendor.name }} (ID: {{ vendor.id }})
                         </option>
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-md-5">
-                    <select class="form-select" id="vendor2" name="vendor2" required>
-                        <option value="">Select Vendor 2</option>
+                <div class="col-md-3">
+                    <label for="vendor2" class="form-label">Second Vendor</label>
+                    <select class="form-select vendor-select" id="vendor2" name="vendor2" required>
+                        <option value="">Select a vendor...</option>
                         {% for vendor in vendors %}
                         <option value="{{ vendor.id }}" {% if vendor2 and vendor.id == vendor2.vendor_id|string %}selected{% endif %}>
-                            {{ vendor.name }}
+                            {{ vendor.name }} (ID: {{ vendor.id }})
                         </option>
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-md-2">
-                    <button type="submit" class="btn btn-primary w-100">Compare</button>
+                <div class="col-md-3">
+                    <label for="vendor3" class="form-label">Third Vendor (Optional)</label>
+                    <select class="form-select vendor-select" id="vendor3" name="vendor3">
+                        <option value="">Select a vendor...</option>
+                        {% for vendor in vendors %}
+                        <option value="{{ vendor.id }}" {% if vendor3 and vendor.id == vendor3.vendor_id|string %}selected{% endif %}>
+                            {{ vendor.name }} (ID: {{ vendor.id }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="vendor4" class="form-label">Fourth Vendor (Optional)</label>
+                    <select class="form-select vendor-select" id="vendor4" name="vendor4">
+                        <option value="">Select a vendor...</option>
+                        {% for vendor in vendors %}
+                        <option value="{{ vendor.id }}" {% if vendor4 and vendor.id == vendor4.vendor_id|string %}selected{% endif %}>
+                            {{ vendor.name }} (ID: {{ vendor.id }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">Compare Vendors</button>
                 </div>
             </div>
         </form>
 
         {% if vendor1 and vendor2 %}
+        <div class="badge-legend mb-3">
+            <div class="d-flex align-items-center">
+                <span class="me-3">Legend:</span>
+                <span class="text-light-gray me-2">0</span> <span class="me-3">No Legal Basis</span>
+                <span class="badge bg-consent me-2">1</span> <span class="me-3">Consent Only</span>
+                <span class="badge bg-legitimate me-2">2</span> <span class="me-3">Legitimate Interest Only</span>
+                <span class="badge bg-combined me-2">3</span> <span class="me-3">Consent & Legitimate Interest</span>
+            </div>
+        </div>
+
         <div class="comparison-results">
-            <h3 class="mb-3">Comparison Results</h3>
             <div class="table-responsive">
                 <table class="table table-bordered">
                     <thead>
                         <tr>
-                            <th style="width: 40%">Feature</th>
-                            <th style="width: 30%">{{ vendor1.vendor_name }}</th>
-                            <th style="width: 30%">{{ vendor2.vendor_name }}</th>
+                            <th style="width: 25%">Feature</th>
+                            <th style="width: {% if vendor4 %}19{% elif vendor3 %}25{% else %}37.5{% endif %}%" class="text-center">{{ vendor1.vendor_name }} (ID: {{ vendor1.vendor_id }})</th>
+                            <th style="width: {% if vendor4 %}19{% elif vendor3 %}25{% else %}37.5{% endif %}%" class="text-center">{{ vendor2.vendor_name }} (ID: {{ vendor2.vendor_id }})</th>
+                            {% if vendor3 %}
+                            <th style="width: {% if vendor4 %}19{% else %}25{% endif %}%" class="text-center">{{ vendor3.vendor_name }} (ID: {{ vendor3.vendor_id }})</th>
+                            {% endif %}
+                            {% if vendor4 %}
+                            <th style="width: 19%" class="text-center">{{ vendor4.vendor_name }} (ID: {{ vendor4.vendor_id }})</th>
+                            {% endif %}
                         </tr>
                     </thead>
                     <tbody>
                         <!-- Standard Purposes -->
                         <tr class="table-light">
-                            <td colspan="3"><strong>Standard Purposes</strong></td>
+                            {% set colspan = 2 %}
+                            {% if vendor3 %}{% set colspan = colspan + 1 %}{% endif %}
+                            {% if vendor4 %}{% set colspan = colspan + 1 %}{% endif %}
+                            <td colspan="{{ colspan }}"><strong>Standard Purposes</strong></td>
                         </tr>
                         {% for purpose in purposes if purpose.id.startswith('P') %}
                         <tr>
@@ -63,34 +105,29 @@
                                 <div>{{ purpose.id }}</div>
                                 <small class="text-muted">{{ purpose.name }}</small>
                             </td>
+                            {% for vendor in [vendor1, vendor2, vendor3, vendor4] if vendor %}
                             <td class="text-center">
-                                {% if vendor1[purpose.id][0] == 1 %}
-                                <span class="badge bg-success">Consent</span>
-                                {% endif %}
-                                {% if vendor1[purpose.id][1] == 1 %}
-                                <span class="badge bg-info">Legitimate Interest</span>
-                                {% endif %}
-                                {% if vendor1[purpose.id][0] == 0 and vendor1[purpose.id][1] == 0 %}
-                                <span class="badge bg-secondary">-</span>
+                                {% set purpose_value = vendor[purpose.id] %}
+                                {% if purpose_value == 3 %}
+                                <span class="badge bg-combined" title="Consent & Legitimate Interest">3</span>
+                                {% elif purpose_value == 1 %}
+                                <span class="badge bg-consent" title="Consent">1</span>
+                                {% elif purpose_value == 2 %}
+                                <span class="badge bg-legitimate" title="Legitimate Interest">2</span>
+                                {% else %}
+                                <span class="text-light-gray" title="No Legal Basis">0</span>
                                 {% endif %}
                             </td>
-                            <td class="text-center">
-                                {% if vendor2[purpose.id][0] == 1 %}
-                                <span class="badge bg-success">Consent</span>
-                                {% endif %}
-                                {% if vendor2[purpose.id][1] == 1 %}
-                                <span class="badge bg-info">Legitimate Interest</span>
-                                {% endif %}
-                                {% if vendor2[purpose.id][0] == 0 and vendor2[purpose.id][1] == 0 %}
-                                <span class="badge bg-secondary">-</span>
-                                {% endif %}
-                            </td>
+                            {% endfor %}
                         </tr>
                         {% endfor %}
 
                         <!-- Special Purposes -->
                         <tr class="table-light">
-                            <td colspan="3"><strong>Special Purposes</strong></td>
+                            {% set colspan = 2 %}
+                            {% if vendor3 %}{% set colspan = colspan + 1 %}{% endif %}
+                            {% if vendor4 %}{% set colspan = colspan + 1 %}{% endif %}
+                            <td colspan="{{ colspan }}"><strong>Special Purposes</strong></td>
                         </tr>
                         {% for purpose in purposes if purpose.id.startswith('SP') %}
                         <tr>
@@ -98,26 +135,29 @@
                                 <div>{{ purpose.id }}</div>
                                 <small class="text-muted">{{ purpose.name }}</small>
                             </td>
+                            {% for vendor in [vendor1, vendor2, vendor3, vendor4] if vendor %}
                             <td class="text-center">
-                                {% if vendor1[purpose.id][1] == 1 %}
-                                <span class="badge bg-info">Legitimate Interest</span>
+                                {% set purpose_value = vendor[purpose.id] %}
+                                {% if purpose_value == 3 %}
+                                <span class="badge bg-combined" title="Consent & Legitimate Interest">3</span>
+                                {% elif purpose_value == 1 %}
+                                <span class="badge bg-consent" title="Consent">1</span>
+                                {% elif purpose_value == 2 %}
+                                <span class="badge bg-legitimate" title="Legitimate Interest">2</span>
                                 {% else %}
-                                <span class="badge bg-secondary">-</span>
+                                <span class="text-light-gray" title="No Legal Basis">0</span>
                                 {% endif %}
                             </td>
-                            <td class="text-center">
-                                {% if vendor2[purpose.id][1] == 1 %}
-                                <span class="badge bg-info">Legitimate Interest</span>
-                                {% else %}
-                                <span class="badge bg-secondary">-</span>
-                                {% endif %}
-                            </td>
+                            {% endfor %}
                         </tr>
                         {% endfor %}
 
                         <!-- Features -->
                         <tr class="table-light">
-                            <td colspan="3"><strong>Features</strong></td>
+                            {% set colspan = 2 %}
+                            {% if vendor3 %}{% set colspan = colspan + 1 %}{% endif %}
+                            {% if vendor4 %}{% set colspan = colspan + 1 %}{% endif %}
+                            <td colspan="{{ colspan }}"><strong>Features</strong></td>
                         </tr>
                         {% for purpose in purposes if purpose.id.startswith('F') %}
                         <tr>
@@ -125,26 +165,29 @@
                                 <div>{{ purpose.id }}</div>
                                 <small class="text-muted">{{ purpose.name }}</small>
                             </td>
+                            {% for vendor in [vendor1, vendor2, vendor3, vendor4] if vendor %}
                             <td class="text-center">
-                                {% if vendor1[purpose.id][1] == 1 %}
-                                <span class="badge bg-info">Yes</span>
+                                {% set purpose_value = vendor[purpose.id] %}
+                                {% if purpose_value == 3 %}
+                                <span class="badge bg-combined" title="Consent & Legitimate Interest">3</span>
+                                {% elif purpose_value == 1 %}
+                                <span class="badge bg-consent" title="Consent">1</span>
+                                {% elif purpose_value == 2 %}
+                                <span class="badge bg-legitimate" title="Legitimate Interest">2</span>
                                 {% else %}
-                                <span class="badge bg-secondary">-</span>
+                                <span class="text-light-gray" title="No Legal Basis">0</span>
                                 {% endif %}
                             </td>
-                            <td class="text-center">
-                                {% if vendor2[purpose.id][1] == 1 %}
-                                <span class="badge bg-info">Yes</span>
-                                {% else %}
-                                <span class="badge bg-secondary">-</span>
-                                {% endif %}
-                            </td>
+                            {% endfor %}
                         </tr>
                         {% endfor %}
 
                         <!-- Special Features -->
                         <tr class="table-light">
-                            <td colspan="3"><strong>Special Features</strong></td>
+                            {% set colspan = 2 %}
+                            {% if vendor3 %}{% set colspan = colspan + 1 %}{% endif %}
+                            {% if vendor4 %}{% set colspan = colspan + 1 %}{% endif %}
+                            <td colspan="{{ colspan }}"><strong>Special Features</strong></td>
                         </tr>
                         {% for purpose in purposes if purpose.id.startswith('SF') %}
                         <tr>
@@ -152,20 +195,20 @@
                                 <div>{{ purpose.id }}</div>
                                 <small class="text-muted">{{ purpose.name }}</small>
                             </td>
+                            {% for vendor in [vendor1, vendor2, vendor3, vendor4] if vendor %}
                             <td class="text-center">
-                                {% if vendor1[purpose.id][0] == 1 %}
-                                <span class="badge bg-success">Yes</span>
+                                {% set purpose_value = vendor[purpose.id] %}
+                                {% if purpose_value == 3 %}
+                                <span class="badge bg-combined" title="Consent & Legitimate Interest">3</span>
+                                {% elif purpose_value == 1 %}
+                                <span class="badge bg-consent" title="Consent">1</span>
+                                {% elif purpose_value == 2 %}
+                                <span class="badge bg-legitimate" title="Legitimate Interest">2</span>
                                 {% else %}
-                                <span class="badge bg-secondary">-</span>
+                                <span class="text-light-gray" title="No Legal Basis">0</span>
                                 {% endif %}
                             </td>
-                            <td class="text-center">
-                                {% if vendor2[purpose.id][0] == 1 %}
-                                <span class="badge bg-success">Yes</span>
-                                {% else %}
-                                <span class="badge bg-secondary">-</span>
-                                {% endif %}
-                            </td>
+                            {% endfor %}
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -178,19 +221,145 @@
 {% endblock %}
 
 {% block extra_css %}
+<!-- Add Select2 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
 <style>
 .badge {
-    margin: 0 2px;
-    min-width: 80px;
+    width: 24px;
+    height: 20px;
+    line-height: 20px;
+    font-size: 10px;
+    padding: 0;
 }
+
+.text-light-gray {
+    color: #999;
+}
+
+.badge.bg-consent {
+    background-color: #28a745 !important;
+}
+
+.badge.bg-legitimate {
+    background-color: #0d6efd !important;
+}
+
+.badge.bg-combined {
+    background: linear-gradient(90deg, #28a745 0%, #0d6efd 100%);
+}
+
 .table td {
     vertical-align: middle;
+    padding: 0.3rem;
+    font-size: 0.8rem;
 }
+
+.table th {
+    padding: 0.3rem;
+    font-size: 0.8rem;
+    vertical-align: middle;
+}
+
 .table-light {
     background-color: #f8f9fa;
 }
+
 .table-light td {
     padding: 0.5rem 1rem;
 }
+
+.badge-legend {
+    padding: 10px 0;
+    border-bottom: 1px solid #dee2e6;
+    margin-bottom: 15px;
+}
+
+.form-label {
+    font-weight: 500;
+}
+
+/* Add spacing between form elements */
+.g-3 {
+    --bs-gutter-y: 1rem;
+}
+
+/* Select2 customization */
+.select2-container {
+    width: 100% !important;
+}
+
+.select2-selection {
+    height: 38px !important;
+    border: 1px solid #dee2e6 !important;
+    border-radius: 0.375rem !important;
+}
+
+.select2-selection__rendered {
+    line-height: 36px !important;
+    padding-left: 12px !important;
+}
+
+.select2-selection__arrow {
+    height: 36px !important;
+}
+
+.select2-search__field {
+    border: 1px solid #dee2e6 !important;
+    border-radius: 0.375rem !important;
+    padding: 0.375rem 0.75rem !important;
+}
+
+.select2-results__option {
+    padding: 0.375rem 0.75rem !important;
+}
+
+.select2-results__option--highlighted {
+    background-color: #0d6efd !important;
+}
+
+.select2-container--default .select2-selection--single {
+    background-color: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+}
+
+/* Add some responsive adjustments */
+@media (max-width: 768px) {
+    .col-md-3 {
+        margin-bottom: 1rem;
+    }
+}
 </style>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Add jQuery first -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!-- Then add Select2 -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+$(document).ready(function() {
+    $('.vendor-select').select2({
+        theme: 'bootstrap-5',
+        placeholder: 'Type to search vendors...',
+        allowClear: true,
+        width: '100%',
+        language: {
+            noResults: function() {
+                return "No vendors found";
+            },
+            searching: function() {
+                return "Searching...";
+            }
+        },
+        minimumInputLength: 1,
+        dropdownParent: $('.card-body'),
+        templateResult: function(data) {
+            if (!data.id) return data.text;
+            return $('<span>' + data.text + '</span>');
+        }
+    });
+});
+</script>
 {% endblock %} 

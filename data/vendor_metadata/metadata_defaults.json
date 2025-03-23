@@ -1,0 +1,21 @@
+{
+    "vendor_types": [
+        "DSP",
+        "SSP",
+        "Network",
+        "Ad Server",
+        "Measurement",
+        "Creatives",
+        "DMP",
+        "Other"
+    ],
+    "vendor_status_options": [
+        "no",
+        "partner",
+        "shortlist"
+    ],
+    "mbl_audited_options": {
+        "0": "Not Audited",
+        "1": "Audited"
+    }
+} 

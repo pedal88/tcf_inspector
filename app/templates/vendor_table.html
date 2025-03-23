@@ -36,6 +36,24 @@
 .table th.border-start-light {
     border-left: 1px solid #dee2e6;
 }
+/* Group header styles */
+.table thead tr:first-child th {
+    background-color: #f8f9fa;
+    text-align: center;
+    font-weight: 500;
+    border-bottom: 1px solid #dee2e6;
+    vertical-align: middle;
+}
+/* Table cell alignment */
+.table th,
+.table td {
+    vertical-align: middle;
+    text-align: center;
+}
+/* Keep vendor name left-aligned */
+.table td.vendor-name {
+    text-align: left;
+}
 </style>
 
 <div class="card">
@@ -103,6 +121,15 @@
         <div class="table-responsive">
             <table class="table table-striped">
                 <thead>
+                    <tr>
+                        <th colspan="2">Vendor</th>
+                        <th colspan="3" class="border-start-light">Custom Vendor Info</th>
+                        <th colspan="10" class="border-start-light">Purposes</th>
+                        <th colspan="2" class="border-start-light">Special Purposes</th>
+                        <th colspan="3" class="border-start-light">Features</th>
+                        <th colspan="2" class="border-start-light">Special Features</th>
+                        <th class="border-start-light">Actions</th>
+                    </tr>
                     <tr>
                         <th>ID</th>
                         <th>Name</th>

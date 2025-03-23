@@ -11,7 +11,7 @@
 {% block content %}
 <div class="card">
     <div class="card-header">
-        <h2>{% if vendor %}Vendor History - {{ vendor.name }}{% else %}Select Vendor{% endif %}</h2>
+        <h2>{% if vendor %}Vendor History - {{ vendor.vendor_name }} (ID: {{ vendor.vendor_id }}){% else %}Select Vendor{% endif %}</h2>
     </div>
     <div class="card-body">
         {% if error %}
@@ -28,30 +28,30 @@
                            placeholder="Search vendors..."
                            autocomplete="off">
                 </div>
-                <div class="input-group">
+                <div class="mb-3">
                     <select class="form-select" id="vendorSelect" size="10">
                         <option value="">Select a vendor...</option>
                         {% for v in vendors %}
                         <option value="{{ v.id }}">{{ v.name }}</option>
                         {% endfor %}
                     </select>
-                    <button type="button" class="btn btn-primary" id="viewHistoryBtn" disabled>View History</button>
+                </div>
+                <div>
+                    <button type="button" class="btn btn-primary w-100" id="viewHistoryBtn" disabled>View History</button>
                 </div>
             </div>
         </div>
         {% endif %}
 
         {% if vendor and history %}
-        <div class="badge-legend">
-            <strong>Legend:</strong>
-            <span><span class="badge bg-success">C</span> Consent</span>
-            <span><span class="badge bg-primary">L</span> Legitimate Interest</span>
-            <span><span class="badge bg-success">+C</span> Added with Consent</span>
-            <span><span class="badge bg-primary">+L</span> Added with Legitimate Interest</span>
-            <span><span class="badge bg-warning">↺C</span> Changed to Consent</span>
-            <span><span class="badge bg-warning">↺L</span> Changed to Legitimate Interest</span>
-            <span><span class="badge bg-danger">-</span> Removed</span>
-            <span><span class="badge bg-secondary">·</span> Not Used</span>
+        <div class="badge-legend mb-3">
+            <div class="d-flex align-items-center">
+                <span class="me-3">Legend:</span>
+                <span class="text-light-gray me-2">0</span> <span class="me-3">No Legal Basis</span>
+                <span class="badge bg-consent me-2">1</span> <span class="me-3">Consent Only</span>
+                <span class="badge bg-legitimate me-2">2</span> <span class="me-3">Legitimate Interest Only</span>
+                <span class="badge bg-combined me-2">3</span> <span class="me-3">Consent & Legitimate Interest</span>
+            </div>
         </div>
         <div class="table-responsive">
             <table class="table table-striped">
@@ -61,7 +61,7 @@
                         <th class="small">Version</th>
                         <th class="small">Changes</th>
                         {% for purpose in purposes %}
-                        <th class="small text-center">
+                        <th class="small text-center" title="{{ purpose.name }}">
                             {{ purpose.id }}
                         </th>
                         {% endfor %}
@@ -78,7 +78,16 @@
                         </td>
                         {% for purpose in purposes %}
                         <td class="text-center">
-                            <code class="small">{% if vendor[purpose.id][0] == 1 %}<span class="c">C</span>{% else %}<span class="invisible">0</span>{% endif %}<span class="invisible">,</span> {% if vendor[purpose.id][1] == 1 %}<span class="li">LI</span>{% else %}<span class="invisible">0</span>{% endif %}</code>
+                            {% set purpose_value = vendor[purpose.id] %}
+                            {% if purpose_value == 3 %}
+                            <span class="badge bg-combined" title="Consent & Legitimate Interest">3</span>
+                            {% elif purpose_value == 1 %}
+                            <span class="badge bg-consent" title="Consent">1</span>
+                            {% elif purpose_value == 2 %}
+                            <span class="badge bg-legitimate" title="Legitimate Interest">2</span>
+                            {% else %}
+                            <span class="text-light-gray" title="No Legal Basis">0</span>
+                            {% endif %}
                         </td>
                         {% endfor %}
                         <td>
@@ -123,7 +132,16 @@
                         </td>
                         {% for purpose in purposes %}
                         <td class="text-center">
-                            <code class="small">{% if entry.data[purpose.id][0] == 1 %}<span class="c">C</span>{% else %}<span class="invisible">0</span>{% endif %}<span class="invisible">,</span> {% if entry.data[purpose.id][1] == 1 %}<span class="li">LI</span>{% else %}<span class="invisible">0</span>{% endif %}</code>
+                            {% set purpose_value = entry.purposes[purpose.id] %}
+                            {% if purpose_value == 3 %}
+                            <span class="badge bg-combined" title="Consent & Legitimate Interest">3</span>
+                            {% elif purpose_value == 1 %}
+                            <span class="badge bg-consent" title="Consent">1</span>
+                            {% elif purpose_value == 2 %}
+                            <span class="badge bg-legitimate" title="Legitimate Interest">2</span>
+                            {% else %}
+                            <span class="text-light-gray" title="No Legal Basis">0</span>
+                            {% endif %}
                         </td>
                         {% endfor %}
                         <td>
@@ -159,6 +177,22 @@
     padding: 0;
 }
 
+.text-light-gray {
+    color: #999;
+}
+
+.badge.bg-consent {
+    background-color: #28a745 !important;
+}
+
+.badge.bg-legitimate {
+    background-color: #0d6efd !important;
+}
+
+.badge.bg-combined {
+    background: linear-gradient(90deg, #28a745 0%, #0d6efd 100%);
+}
+
 .table td {
     vertical-align: middle;
     padding: 0.3rem;
@@ -191,21 +225,9 @@
 
 /* Add legend for badges */
 .badge-legend {
-    margin: 0.5rem 0;
-    padding: 0.5rem;
-    background-color: #f8f9fa;
-    border-radius: 0.25rem;
-    font-size: 0.8rem;
-}
-
-.badge-legend .badge {
-    margin-right: 0.25rem;
-}
-
-.badge-legend span {
-    margin-right: 0.5rem;
-    white-space: nowrap;
-    display: inline-block;
+    padding: 10px 0;
+    border-bottom: 1px solid #dee2e6;
+    margin-bottom: 15px;
 }
 
 .btn-sm {
@@ -216,26 +238,6 @@
 .text-wrap {
     white-space: normal !important;
     word-wrap: break-word !important;
-}
-
-code {
-    font-size: 0.75rem !important;
-    padding: 0.1rem 0.2rem;
-    background-color: rgba(0,0,0,0.05);
-    border-radius: 3px;
-    min-width: 45px;
-    display: inline-block;
-}
-
-/* Style for C and LI values */
-code .c {
-    color: #198754;  /* Bootstrap success color */
-    font-weight: 500;
-}
-
-code .li {
-    color: #0d6efd;  /* Bootstrap primary color */
-    font-weight: 500;
 }
 </style>
 {% endblock %}

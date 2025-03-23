@@ -171,7 +171,7 @@ def vendor_table():
 def vendor_history(vendor_id):
     # Get the latest processed file from archive_processed
     archive_files = sorted([f for f in os.listdir(Config.ARCHIVE_PROCESSED_DIR) 
-                          if f.endswith('.json') and 'vendor_list_processed' in f],
+                          if f.endswith('.json')],
                          reverse=True)
     
     if not archive_files:
@@ -226,11 +226,18 @@ def vendor_history(vendor_id):
                         
                         # Get current purposes status
                         current_purposes = {}
+                        # Standard Purposes (P1-P10)
                         for key in ['P1', 'P2', 'P3', 'P4', 'P5', 'P6', 'P7', 'P8', 'P9', 'P10']:
-                            if archive_vendor[key][0] == 1:  # Consent
-                                current_purposes[key] = 'consent'
-                            elif archive_vendor[key][1] == 1:  # Legitimate Interest
-                                current_purposes[key] = 'legitimate_interest'
+                            current_purposes[key] = archive_vendor[key]
+                        # Special Purposes (SP1-SP2)
+                        for key in ['SP1', 'SP2']:
+                            current_purposes[key] = archive_vendor[key]
+                        # Features (F1-F3)
+                        for key in ['F1', 'F2', 'F3']:
+                            current_purposes[key] = archive_vendor[key]
+                        # Special Features (SF1-SF2)
+                        for key in ['SF1', 'SF2']:
+                            current_purposes[key] = archive_vendor[key]
                         
                         # Calculate changes from previous version
                         changes = {
@@ -316,10 +323,12 @@ def vendor_history(vendor_id):
 def vendor_compare():
     vendor1_id = request.args.get('vendor1')
     vendor2_id = request.args.get('vendor2')
+    vendor3_id = request.args.get('vendor3')
+    vendor4_id = request.args.get('vendor4')
     
     # Get the latest processed file from archive_processed
     archive_files = sorted([f for f in os.listdir(Config.ARCHIVE_PROCESSED_DIR) 
-                          if f.endswith('.json') and 'vendor_list_processed' in f],
+                          if f.endswith('.json')],
                          reverse=True)
     
     if not archive_files:
@@ -332,22 +341,21 @@ def vendor_compare():
         with open(file_path, 'r') as f:
             vendors_data = json.load(f)
         
-        # Create a lookup dictionary for vendors
-        vendors = {str(v['vendor_id']): v for v in vendors_data}
-        
-        # Get all vendors for the dropdown lists
+        # Get all vendors and sort them alphabetically by name
         all_vendors = [{'id': str(v['vendor_id']), 'name': v['vendor_name']} 
                       for v in vendors_data]
-        all_vendors.sort(key=lambda x: x['name'])
+        all_vendors.sort(key=lambda x: x['name'].lower())  # Case-insensitive sort
         
         # If vendors are selected, get their data
         if vendor1_id and vendor2_id:
-            vendor1 = vendors.get(vendor1_id)
-            vendor2 = vendors.get(vendor2_id)
+            vendor1 = next((v for v in vendors_data if str(v['vendor_id']) == vendor1_id), None)
+            vendor2 = next((v for v in vendors_data if str(v['vendor_id']) == vendor2_id), None)
+            vendor3 = next((v for v in vendors_data if str(v['vendor_id']) == vendor3_id), None) if vendor3_id else None
+            vendor4 = next((v for v in vendors_data if str(v['vendor_id']) == vendor4_id), None) if vendor4_id else None
             
             if not vendor1 or not vendor2:
                 return render_template('vendor_compare.html',
-                                    error="One or both vendors not found",
+                                    error="One or both required vendors not found",
                                     vendors=all_vendors)
             
             # Define purposes for comparison
@@ -375,9 +383,12 @@ def vendor_compare():
                                 vendors=all_vendors,
                                 vendor1=vendor1,
                                 vendor2=vendor2,
+                                vendor3=vendor3,
+                                vendor4=vendor4,
                                 purposes=purposes)
     
     except Exception as e:
+        print(f"Error in vendor_compare: {str(e)}")  # Add debug logging
         return render_template('vendor_compare.html',
                             error=f"Error loading vendor data: {str(e)}",
                             vendors=all_vendors)

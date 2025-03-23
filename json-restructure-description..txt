@@ -1,0 +1,39 @@
+
+This are the purposes, special purposes, features and special features described in the vendor list:
+P1
+P2
+P3
+P4
+P5
+P6
+P7
+P8
+P9
+P10
+SP1
+SP2
+F1
+F2
+F3
+SF1
+SF2
+
+The two available legal basises are C (Consent) and LI (Legitimate Interest)
+
+The gvl json describes the legal basis for the purposes in "purposes", "legIntPurposes" and "flexiblePurposes"
+The gvl json describes the special purposes in "specialPurposes"
+The gvl json describes the features in "features"
+The gvl json describes the special features in "specialFeatures"
+
+I want to restructure the gvl json to a simpler format where each P, SP, F and SF is represented by a value where:
+No legal basis = 0
+C = 1
+LI O 2
+C or LI = 3
+
+The output should also include vendor_id and vendor_name before all the other fields.
+
+Here is a sample of the original gvl json. Talk to me about this
+
+
+
