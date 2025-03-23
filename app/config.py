@@ -15,6 +15,7 @@ class Config:
     # File Storage
     CURRENT_DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'current')
     ARCHIVE_DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'archive')
+    ARCHIVE_PROCESSED_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'archive_processed')
     
     # Scheduler
     UPDATE_INTERVAL = timedelta(minutes=10)
@@ -23,4 +24,5 @@ class Config:
     def init_app(app):
         # Create data directories if they don't exist
         os.makedirs(Config.CURRENT_DATA_DIR, exist_ok=True)
-        os.makedirs(Config.ARCHIVE_DATA_DIR, exist_ok=True) 
+        os.makedirs(Config.ARCHIVE_DATA_DIR, exist_ok=True)
+        os.makedirs(Config.ARCHIVE_PROCESSED_DIR, exist_ok=True) 

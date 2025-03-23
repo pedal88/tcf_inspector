@@ -8,13 +8,19 @@
         <h2>Compare Vendors</h2>
     </div>
     <div class="card-body">
-        <form id="compareForm" class="mb-4">
+        {% if error %}
+        <div class="alert alert-danger">{{ error }}</div>
+        {% endif %}
+
+        <form method="GET" class="mb-4">
             <div class="row">
                 <div class="col-md-5">
                     <select class="form-select" id="vendor1" name="vendor1" required>
                         <option value="">Select Vendor 1</option>
                         {% for vendor in vendors %}
-                        <option value="{{ vendor.id }}">{{ vendor.name }}</option>
+                        <option value="{{ vendor.id }}" {% if vendor1 and vendor.id == vendor1.vendor_id|string %}selected{% endif %}>
+                            {{ vendor.name }}
+                        </option>
                         {% endfor %}
                     </select>
                 </div>
@@ -22,7 +28,9 @@
                     <select class="form-select" id="vendor2" name="vendor2" required>
                         <option value="">Select Vendor 2</option>
                         {% for vendor in vendors %}
-                        <option value="{{ vendor.id }}">{{ vendor.name }}</option>
+                        <option value="{{ vendor.id }}" {% if vendor2 and vendor.id == vendor2.vendor_id|string %}selected{% endif %}>
+                            {{ vendor.name }}
+                        </option>
                         {% endfor %}
                     </select>
                 </div>
@@ -32,74 +40,157 @@
             </div>
         </form>
 
-        <div id="comparison-results" class="d-none">
+        {% if vendor1 and vendor2 %}
+        <div class="comparison-results">
             <h3 class="mb-3">Comparison Results</h3>
             <div class="table-responsive">
                 <table class="table table-bordered">
                     <thead>
                         <tr>
-                            <th>Feature</th>
-                            <th id="vendor1-name">Vendor 1</th>
-                            <th id="vendor2-name">Vendor 2</th>
+                            <th style="width: 40%">Feature</th>
+                            <th style="width: 30%">{{ vendor1.vendor_name }}</th>
+                            <th style="width: 30%">{{ vendor2.vendor_name }}</th>
                         </tr>
                     </thead>
-                    <tbody id="comparison-body">
-                        <!-- Populated by JavaScript -->
+                    <tbody>
+                        <!-- Standard Purposes -->
+                        <tr class="table-light">
+                            <td colspan="3"><strong>Standard Purposes</strong></td>
+                        </tr>
+                        {% for purpose in purposes if purpose.id.startswith('P') %}
+                        <tr>
+                            <td>
+                                <div>{{ purpose.id }}</div>
+                                <small class="text-muted">{{ purpose.name }}</small>
+                            </td>
+                            <td class="text-center">
+                                {% if vendor1[purpose.id][0] == 1 %}
+                                <span class="badge bg-success">Consent</span>
+                                {% endif %}
+                                {% if vendor1[purpose.id][1] == 1 %}
+                                <span class="badge bg-info">Legitimate Interest</span>
+                                {% endif %}
+                                {% if vendor1[purpose.id][0] == 0 and vendor1[purpose.id][1] == 0 %}
+                                <span class="badge bg-secondary">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                {% if vendor2[purpose.id][0] == 1 %}
+                                <span class="badge bg-success">Consent</span>
+                                {% endif %}
+                                {% if vendor2[purpose.id][1] == 1 %}
+                                <span class="badge bg-info">Legitimate Interest</span>
+                                {% endif %}
+                                {% if vendor2[purpose.id][0] == 0 and vendor2[purpose.id][1] == 0 %}
+                                <span class="badge bg-secondary">-</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+
+                        <!-- Special Purposes -->
+                        <tr class="table-light">
+                            <td colspan="3"><strong>Special Purposes</strong></td>
+                        </tr>
+                        {% for purpose in purposes if purpose.id.startswith('SP') %}
+                        <tr>
+                            <td>
+                                <div>{{ purpose.id }}</div>
+                                <small class="text-muted">{{ purpose.name }}</small>
+                            </td>
+                            <td class="text-center">
+                                {% if vendor1[purpose.id][1] == 1 %}
+                                <span class="badge bg-info">Legitimate Interest</span>
+                                {% else %}
+                                <span class="badge bg-secondary">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                {% if vendor2[purpose.id][1] == 1 %}
+                                <span class="badge bg-info">Legitimate Interest</span>
+                                {% else %}
+                                <span class="badge bg-secondary">-</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+
+                        <!-- Features -->
+                        <tr class="table-light">
+                            <td colspan="3"><strong>Features</strong></td>
+                        </tr>
+                        {% for purpose in purposes if purpose.id.startswith('F') %}
+                        <tr>
+                            <td>
+                                <div>{{ purpose.id }}</div>
+                                <small class="text-muted">{{ purpose.name }}</small>
+                            </td>
+                            <td class="text-center">
+                                {% if vendor1[purpose.id][1] == 1 %}
+                                <span class="badge bg-info">Yes</span>
+                                {% else %}
+                                <span class="badge bg-secondary">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                {% if vendor2[purpose.id][1] == 1 %}
+                                <span class="badge bg-info">Yes</span>
+                                {% else %}
+                                <span class="badge bg-secondary">-</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+
+                        <!-- Special Features -->
+                        <tr class="table-light">
+                            <td colspan="3"><strong>Special Features</strong></td>
+                        </tr>
+                        {% for purpose in purposes if purpose.id.startswith('SF') %}
+                        <tr>
+                            <td>
+                                <div>{{ purpose.id }}</div>
+                                <small class="text-muted">{{ purpose.name }}</small>
+                            </td>
+                            <td class="text-center">
+                                {% if vendor1[purpose.id][0] == 1 %}
+                                <span class="badge bg-success">Yes</span>
+                                {% else %}
+                                <span class="badge bg-secondary">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                {% if vendor2[purpose.id][0] == 1 %}
+                                <span class="badge bg-success">Yes</span>
+                                {% else %}
+                                <span class="badge bg-secondary">-</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
                     </tbody>
                 </table>
             </div>
         </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}
 
-{% block extra_js %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const compareForm = document.getElementById('compareForm');
-    const resultsDiv = document.getElementById('comparison-results');
-    
-    compareForm.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        const vendor1 = document.getElementById('vendor1').value;
-        const vendor2 = document.getElementById('vendor2').value;
-        
-        try {
-            const response = await fetch(`/vendor/compare?vendor1=${vendor1}&vendor2=${vendor2}`);
-            const data = await response.json();
-            
-            if (response.ok) {
-                displayComparison(data);
-            } else {
-                alert(data.error || 'Error comparing vendors');
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            alert('Error comparing vendors');
-        }
-    });
-    
-    function displayComparison(data) {
-        resultsDiv.classList.remove('d-none');
-        // Update vendor names
-        document.getElementById('vendor1-name').textContent = data.vendors[0].name;
-        document.getElementById('vendor2-name').textContent = data.vendors[1].name;
-        
-        // Clear and populate comparison table
-        const tbody = document.getElementById('comparison-body');
-        tbody.innerHTML = '';
-        
-        // Compare purposes
-        for (const purpose of data.purposes) {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${purpose.name}</td>
-                <td>${data.vendors[0].purposes.includes(purpose.id) ? '✓' : '-'}</td>
-                <td>${data.vendors[1].purposes.includes(purpose.id) ? '✓' : '-'}</td>
-            `;
-            tbody.appendChild(row);
-        }
-    }
-});
-</script>
+{% block extra_css %}
+<style>
+.badge {
+    margin: 0 2px;
+    min-width: 80px;
+}
+.table td {
+    vertical-align: middle;
+}
+.table-light {
+    background-color: #f8f9fa;
+}
+.table-light td {
+    padding: 0.5rem 1rem;
+}
+</style>
 {% endblock %} 

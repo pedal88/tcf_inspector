@@ -79,6 +79,23 @@ class TCFAPIService:
             return None
 
     @staticmethod
+    def process_vendor_list_file(file_path):
+        """Process a vendor list file using the process_current_gvl.py script"""
+        try:
+            import subprocess
+            result = subprocess.run(['./process_current_gvl.py', file_path], 
+                                  capture_output=True, text=True)
+            if result.returncode == 0:
+                print(f"Successfully processed vendor list file: {file_path}")
+                return True
+            else:
+                print(f"Error processing vendor list file: {result.stderr}")
+                return False
+        except Exception as e:
+            print(f"Error running process script: {e}")
+            return False
+
+    @staticmethod
     def save_to_archive_only(data):
         """Save vendor list data directly to archive without affecting current version"""
         if not data:
@@ -101,6 +118,10 @@ class TCFAPIService:
             with open(archive_file, 'w') as f:
                 json.dump(data, f, indent=2)
             print(f"Successfully archived {os.path.basename(archive_file)}")
+            
+            # Process the archived file
+            TCFAPIService.process_vendor_list_file(archive_file)
+            
             return True
 
         except Exception as e:
@@ -154,14 +175,19 @@ class TCFAPIService:
                                                       TCFAPIService.get_filename(current_data))
                     if not os.path.exists(current_archive_file):
                         with open(current_archive_file, 'w') as dst:
-                            json.dump(current_data, f, indent=2)
+                            json.dump(current_data, dst, indent=2)
                         print(f"Archived current version as {os.path.basename(current_archive_file)}")
+                        # Process the archived current version
+                        TCFAPIService.process_vendor_list_file(current_archive_file)
 
             # Save new data
             try:
                 # Save to archive first
                 with open(archive_file, 'w') as f:
                     json.dump(data, f, indent=2)
+
+                # Process the new archived file
+                TCFAPIService.process_vendor_list_file(archive_file)
 
                 # Save to current directory
                 with open(current_file, 'w') as f:

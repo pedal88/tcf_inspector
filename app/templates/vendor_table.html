@@ -3,6 +3,21 @@
 {% block title %}Vendor Table - TCF Inspector{% endblock %}
 
 {% block content %}
+<style>
+.text-light-gray {
+    color: #999;
+}
+.badge.bg-consent {
+    background-color: #28a745 !important;
+}
+.badge.bg-legitimate {
+    background-color: #fd7e14 !important;
+}
+.badge.bg-combined {
+    background: linear-gradient(90deg, #28a745 0%, #fd7e14 100%);
+}
+</style>
+
 <div class="card">
     <div class="card-header">
         <h2>Vendor Purposes Table</h2>
@@ -32,13 +47,10 @@
             <table class="table table-striped">
                 <thead>
                     <tr>
-                        <th>Vendor ID</th>
+                        <th>ID</th>
                         <th>Name</th>
                         {% for purpose in purposes %}
-                        <th>
-                            <div>P{{ purpose.id }}</div>
-                            <div class="small text-muted">{{ purpose.name }}</div>
-                        </th>
+                        <th title="{{ purpose.name }}">{{ purpose.id }}</th>
                         {% endfor %}
                         <th>Actions</th>
                     </tr>
@@ -46,25 +58,37 @@
                 <tbody>
                     {% for vendor in vendors %}
                     <tr>
-                        <td>{{ vendor.id }}</td>
-                        <td>{{ vendor.name }}</td>
+                        <td>{{ vendor.vendor_id }}</td>
+                        <td>{{ vendor.vendor_name }}</td>
                         {% for purpose in purposes %}
                         <td>
-                            {% if purpose.id in vendor.purposes %}
-                            <span class="badge bg-success">✓</span>
+                            {% set purpose_value = vendor[purpose.id] %}
+                            {% if purpose_value == 3 %}
+                            <span class="badge bg-combined" title="Consent & Legitimate Interest">3</span>
+                            {% elif purpose_value == 1 %}
+                            <span class="badge bg-consent" title="Consent">1</span>
+                            {% elif purpose_value == 2 %}
+                            <span class="badge bg-legitimate" title="Legitimate Interest">2</span>
                             {% else %}
-                            <span class="badge bg-secondary">-</span>
+                            <span class="text-light-gray" title="No Legal Basis">0</span>
                             {% endif %}
                         </td>
                         {% endfor %}
                         <td>
-                            <a href="{{ url_for('main.vendor_history', vendor_id=vendor.id) }}" 
+                            <a href="{{ url_for('main.vendor_history', vendor_id=vendor.vendor_id) }}" 
                                class="btn btn-sm btn-info">History</a>
                         </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
+        </div>
+        <div class="mt-3">
+            <h5>Legend:</h5>
+            <span class="badge bg-combined me-2">3</span> Consent & Legitimate Interest
+            <span class="badge bg-consent me-2">1</span> Consent Only
+            <span class="badge bg-legitimate me-2">2</span> Legitimate Interest Only
+            <span class="text-light-gray me-2">0</span> No Legal Basis
         </div>
         {% endif %}
     </div>
@@ -74,7 +98,11 @@
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Add any table-specific JavaScript here
+    // Enable Bootstrap tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    })
 });
 </script>
 {% endblock %} 
