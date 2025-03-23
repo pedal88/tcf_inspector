@@ -72,9 +72,18 @@ def process_gvl_file(input_path, output_path):
     # Sort vendors by ID to maintain consistent order
     transformed_vendors.sort(key=lambda x: x["vendor_id"])
     
+    # Create output structure with metadata
+    output_data = {
+        "gvlSpecificationVersion": data.get("gvlSpecificationVersion"),
+        "vendorListVersion": data.get("vendorListVersion"),
+        "tcfPolicyVersion": data.get("tcfPolicyVersion"),
+        "lastUpdated": data.get("lastUpdated"),
+        "vendors": transformed_vendors
+    }
+    
     # Save transformed data
     with open(output_path, 'w') as f:
-        json.dump(transformed_vendors, f, indent=2)
+        json.dump(output_data, f, indent=2)
 
 def process_archive():
     """Process all files in the archive directory."""

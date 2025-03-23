@@ -11,10 +11,30 @@
     background-color: #28a745 !important;
 }
 .badge.bg-legitimate {
-    background-color: #fd7e14 !important;
+    background-color: #0d6efd !important;
 }
 .badge.bg-combined {
-    background: linear-gradient(90deg, #28a745 0%, #fd7e14 100%);
+    background: linear-gradient(90deg, #28a745 0%, #0d6efd 100%);
+}
+.legend-container {
+    padding: 10px 0;
+    border-bottom: 1px solid #dee2e6;
+    margin-bottom: 15px;
+}
+.badge-sm {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.4rem;
+    border-radius: 0.2rem;
+}
+.badge-outline-primary {
+    color: #0d6efd;
+    background-color: transparent;
+    border: 1px solid #0d6efd;
+}
+/* Add vertical line styles */
+.table td.border-start-light,
+.table th.border-start-light {
+    border-left: 1px solid #dee2e6;
 }
 </style>
 
@@ -23,13 +43,13 @@
         <h2>Vendor Purposes Table</h2>
         <div class="row mb-3">
             <div class="col-md-6">
-                <form method="GET" class="form-inline">
+                <form method="GET" class="form-inline mb-2">
                     <div class="input-group">
                         <select name="file" class="form-select" id="fileSelect">
-                            <option value="">Select a vendor list file...</option>
+                            <option value="">Select a date...</option>
                             {% for file in available_files %}
-                            <option value="{{ file }}" {% if selected_file == file %}selected{% endif %}>
-                                {{ file }}
+                            <option value="{{ file.filename }}" {% if selected_file == file.filename %}selected{% endif %}>
+                                {{ file.display }}
                             </option>
                             {% endfor %}
                         </select>
@@ -37,31 +57,104 @@
                     </div>
                 </form>
             </div>
+            <div class="col-md-6 text-end">
+                <button id="showAllBtn" class="btn btn-secondary">Show All Vendors</button>
+            </div>
+        </div>
+        {% if selected_file %}
+        <div class="alert alert-info mb-3">
+            <div class="row">
+                <div class="col-md-4">
+                    <strong>GVL Specification Version:</strong> {{ gvl_metadata.gvlSpecificationVersion }}
+                </div>
+                <div class="col-md-4">
+                    <strong>Vendor List Version:</strong> {{ gvl_metadata.vendorListVersion }}
+                </div>
+                <div class="col-md-4">
+                    <strong>TCF Policy Version:</strong> {{ gvl_metadata.tcfPolicyVersion }}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        <div class="row">
+            <div class="col-md-4">
+                <div class="input-group">
+                    <span class="input-group-text">
+                        <i class="fas fa-search"></i>
+                    </span>
+                    <input type="text" id="vendorSearch" class="form-control" placeholder="Search vendors...">
+                </div>
+            </div>
         </div>
     </div>
     <div class="card-body">
         {% if error %}
         <div class="alert alert-danger">{{ error }}</div>
         {% else %}
+        <div class="legend-container">
+            <div class="d-flex align-items-center">
+                <span class="me-3">Legend:</span>
+                <span class="text-light-gray me-2">0</span> <span class="me-3">No Legal Basis</span>
+                <span class="badge bg-consent me-2">1</span> <span class="me-3">Consent Only</span>
+                <span class="badge bg-legitimate me-2">2</span> <span class="me-3">Legitimate Interest Only</span>
+                <span class="badge bg-combined me-2">3</span> <span class="me-3">Consent & Legitimate Interest</span>
+            </div>
+        </div>
         <div class="table-responsive">
             <table class="table table-striped">
                 <thead>
                     <tr>
                         <th>ID</th>
                         <th>Name</th>
+                        <th class="border-start-light">Status</th>
+                        <th>Type</th>
+                        <th>Audited</th>
                         {% for purpose in purposes %}
-                        <th title="{{ purpose.name }}">{{ purpose.id }}</th>
+                            {% if purpose.id == 'P1' or purpose.id == 'P2' or purpose.id == 'SP1' or purpose.id == 'F1' or purpose.id == 'SF1' %}
+                            <th class="border-start-light" title="{{ purpose.name }}">{{ purpose.id }}</th>
+                            {% else %}
+                            <th title="{{ purpose.name }}">{{ purpose.id }}</th>
+                            {% endif %}
                         {% endfor %}
-                        <th>Actions</th>
+                        <th class="border-start-light">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for vendor in vendors %}
-                    <tr>
+                    <tr class="vendor-row {% if loop.index > 20 %}d-none{% endif %}">
                         <td>{{ vendor.vendor_id }}</td>
-                        <td>{{ vendor.vendor_name }}</td>
-                        {% for purpose in purposes %}
+                        <td class="vendor-name">{{ vendor.vendor_name }}</td>
+                        <td class="border-start-light">
+                            {% if vendor.vendor_status == 'partner' %}
+                            <span class="badge bg-success">Partner</span>
+                            {% elif vendor.vendor_status == 'shortlist' %}
+                            <span class="badge bg-info">Shortlist</span>
+                            {% else %}
+                            <span class="badge bg-secondary">No</span>
+                            {% endif %}
+                        </td>
                         <td>
+                            {% if vendor.vendor_types %}
+                                {% for type in vendor.vendor_types %}
+                                <span class="badge badge-sm badge-outline-primary me-1">{{ type }}</span>
+                                {% endfor %}
+                            {% else %}
+                            <span class="text-light-gray small">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if vendor.mbl_audited == 1 %}
+                            <span class="badge bg-success" title="MBL Audited">Yes</span>
+                            {% else %}
+                            <span class="badge bg-secondary" title="Not MBL Audited">No</span>
+                            {% endif %}
+                        </td>
+                        {% for purpose in purposes %}
+                            {% if purpose.id == 'P1' or purpose.id == 'P2' or purpose.id == 'SP1' or purpose.id == 'F1' or purpose.id == 'SF1' %}
+                            <td class="border-start-light">
+                            {% else %}
+                            <td>
+                            {% endif %}
                             {% set purpose_value = vendor[purpose.id] %}
                             {% if purpose_value == 3 %}
                             <span class="badge bg-combined" title="Consent & Legitimate Interest">3</span>
@@ -74,7 +167,7 @@
                             {% endif %}
                         </td>
                         {% endfor %}
-                        <td>
+                        <td class="border-start-light">
                             <a href="{{ url_for('main.vendor_history', vendor_id=vendor.vendor_id) }}" 
                                class="btn btn-sm btn-info">History</a>
                         </td>
@@ -82,13 +175,6 @@
                     {% endfor %}
                 </tbody>
             </table>
-        </div>
-        <div class="mt-3">
-            <h5>Legend:</h5>
-            <span class="badge bg-combined me-2">3</span> Consent & Legitimate Interest
-            <span class="badge bg-consent me-2">1</span> Consent Only
-            <span class="badge bg-legitimate me-2">2</span> Legitimate Interest Only
-            <span class="text-light-gray me-2">0</span> No Legal Basis
         </div>
         {% endif %}
     </div>
@@ -103,6 +189,44 @@ document.addEventListener('DOMContentLoaded', function() {
     var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
         return new bootstrap.Tooltip(tooltipTriggerEl)
     })
+
+    // Handle show all vendors button
+    var showAllBtn = document.getElementById('showAllBtn')
+    var vendorRows = document.querySelectorAll('.vendor-row')
+    var showingAll = false
+
+    showAllBtn.addEventListener('click', function() {
+        showingAll = !showingAll
+        vendorRows.forEach(function(row, index) {
+            if (index >= 20) {
+                row.classList.toggle('d-none', !showingAll)
+            }
+        })
+        showAllBtn.textContent = showingAll ? 'Show First 20' : 'Show All Vendors'
+        filterVendors() // Reapply search filter after showing/hiding vendors
+    })
+
+    // Handle vendor search
+    var searchInput = document.getElementById('vendorSearch')
+    
+    function filterVendors() {
+        var searchTerm = searchInput.value.toLowerCase()
+        var visibleCount = 0
+        
+        vendorRows.forEach(function(row) {
+            var vendorName = row.querySelector('.vendor-name').textContent.toLowerCase()
+            var matchesSearch = vendorName.includes(searchTerm)
+            var shouldBeVisible = matchesSearch && (showingAll || visibleCount < 20)
+            
+            row.classList.toggle('d-none', !shouldBeVisible)
+            
+            if (matchesSearch) {
+                visibleCount++
+            }
+        })
+    }
+
+    searchInput.addEventListener('input', filterVendors)
 });
 </script>
 {% endblock %} 

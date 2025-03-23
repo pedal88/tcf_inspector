@@ -14,9 +14,17 @@ def get_available_vendor_files():
     # Add files from archive_processed
     archive_files = [f for f in os.listdir(Config.ARCHIVE_PROCESSED_DIR) 
                     if f.endswith('.json')]
-    files.extend(sorted(archive_files, reverse=True))
     
-    return files
+    # Create a list of tuples with (display_name, filename)
+    file_info = []
+    for filename in archive_files:
+        display_name = filename.split('_')[0]  # Get just the date part
+        file_info.append({'display': display_name, 'filename': filename})
+    
+    # Sort by filename in reverse order (most recent first)
+    file_info.sort(key=lambda x: x['filename'], reverse=True)
+    
+    return file_info
 
 @main_bp.route('/')
 def index():
@@ -35,19 +43,85 @@ def vendor_table():
     
     # Get selected file from query parameters or use the most recent one
     selected_file = request.args.get('file')
-    if not selected_file or selected_file not in available_files:
-        selected_file = available_files[0]  # Most recent file
+    if not selected_file or not any(f['filename'] == selected_file for f in available_files):
+        selected_file = available_files[0]['filename']  # Most recent file
     
-    file_path = os.path.join(Config.ARCHIVE_PROCESSED_DIR, selected_file)
+    processed_file_path = os.path.join(Config.ARCHIVE_PROCESSED_DIR, selected_file)
     
-    # Load and parse the file
+    # Find the corresponding original file in archive
+    # Convert filename from processed format to original format
+    # From: YYYY-MM-DD_vendor_list_processed_vXX.json
+    # To:   YYYY-MM-DD_vendor_list_gvl3_tcf5_vXX.json
+    date_part = selected_file.split('_')[0]  # Get YYYY-MM-DD
+    version_part = selected_file.split('_')[-1]  # Get vXX.json
+    original_file = f"{date_part}_vendor_list_gvl3_tcf5_{version_part}"
+    original_file_path = os.path.join(Config.ARCHIVE_DATA_DIR, original_file)
+    
+    metadata_path = os.path.join(Config.VENDOR_METADATA_DIR, 'vendor_metadata.json')
+    
+    # Load and parse the files
     try:
-        with open(file_path, 'r') as f:
-            data = json.load(f)
+        # Load processed vendor data
+        with open(processed_file_path, 'r') as f:
+            vendors = json.load(f)
+            
+        # Load metadata from original GVL file
+        gvl_metadata = {
+            'gvlSpecificationVersion': 'N/A',
+            'vendorListVersion': 'N/A',
+            'tcfPolicyVersion': 'N/A',
+            'lastUpdated': 'N/A'
+        }
         
-        # The processed files have a different structure - they're a list of vendors
-        # Each vendor has all the required fields (P1-P10, SP1-SP2, F1-F3, SF1-SF2)
-        vendors = sorted(data, key=lambda x: x['vendor_id'])
+        if os.path.exists(original_file_path):
+            print(f"Loading metadata from original file: {original_file_path}")
+            with open(original_file_path, 'r') as f:
+                original_data = json.load(f)
+                gvl_metadata = {
+                    'gvlSpecificationVersion': original_data.get('gvlSpecificationVersion', 'N/A'),
+                    'vendorListVersion': original_data.get('vendorListVersion', 'N/A'),
+                    'tcfPolicyVersion': original_data.get('tcfPolicyVersion', 'N/A'),
+                    'lastUpdated': original_data.get('lastUpdated', 'N/A')
+                }
+                print("Loaded GVL Metadata:", gvl_metadata)
+        else:
+            print(f"Original GVL file not found: {original_file_path}")
+            # Try to find any matching file by date
+            archive_files = [f for f in os.listdir(Config.ARCHIVE_DATA_DIR) if f.startswith(date_part) and f.endswith(version_part)]
+            if archive_files:
+                original_file_path = os.path.join(Config.ARCHIVE_DATA_DIR, archive_files[0])
+                print(f"Found alternative file: {original_file_path}")
+                with open(original_file_path, 'r') as f:
+                    original_data = json.load(f)
+                    gvl_metadata = {
+                        'gvlSpecificationVersion': original_data.get('gvlSpecificationVersion', 'N/A'),
+                        'vendorListVersion': original_data.get('vendorListVersion', 'N/A'),
+                        'tcfPolicyVersion': original_data.get('tcfPolicyVersion', 'N/A'),
+                        'lastUpdated': original_data.get('lastUpdated', 'N/A')
+                    }
+                    print("Loaded GVL Metadata from alternative file:", gvl_metadata)
+        
+        # Load vendor metadata if it exists
+        vendor_metadata = {}
+        if os.path.exists(metadata_path):
+            with open(metadata_path, 'r') as f:
+                vendor_metadata = json.load(f)
+        
+        # Merge metadata with vendor data
+        for vendor in vendors:
+            vendor_id = str(vendor['vendor_id'])
+            if vendor_id in vendor_metadata:
+                metadata = vendor_metadata[vendor_id]
+                vendor['vendor_status'] = metadata.get('vendor_status', 'no')  # Default to 'no' if not set
+                vendor['vendor_types'] = metadata.get('vendor_type', [])  # Changed from vendor_types to vendor_type
+                vendor['mbl_audited'] = metadata.get('mbl_audited', 0)  # Default to 0 (not audited) if not set
+            else:
+                vendor['vendor_status'] = 'no'  # Default status for vendors without metadata
+                vendor['vendor_types'] = []  # Default empty list for vendors without metadata
+                vendor['mbl_audited'] = 0  # Default to not audited for vendors without metadata
+        
+        # Sort vendors by ID
+        vendors = sorted(vendors, key=lambda x: x['vendor_id'])
         
         # Define purposes for the template
         purposes = [
@@ -78,13 +152,20 @@ def vendor_table():
                              vendors=vendors,
                              purposes=purposes,
                              available_files=available_files,
-                             selected_file=selected_file)
+                             selected_file=selected_file,
+                             gvl_metadata=gvl_metadata)
     
     except Exception as e:
         return render_template('vendor_table.html',
                              error=f"Error loading vendor data: {str(e)}",
                              available_files=available_files,
-                             selected_file=selected_file)
+                             selected_file=selected_file,
+                             gvl_metadata={
+                                 'gvlSpecificationVersion': 'N/A',
+                                 'vendorListVersion': 'N/A',
+                                 'tcfPolicyVersion': 'N/A',
+                                 'lastUpdated': 'N/A'
+                             })
 
 @main_bp.route('/vendor/history/<vendor_id>')
 def vendor_history(vendor_id):
