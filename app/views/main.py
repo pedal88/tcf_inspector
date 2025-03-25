@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, render_template, request
+from flask import Blueprint, jsonify, render_template, request, flash, redirect, url_for, current_app
 from app.services.tcf_api import TCFAPIService
 import os
 import json
@@ -393,4 +393,99 @@ def vendor_compare():
                             error=f"Error loading vendor data: {str(e)}",
                             vendors=all_vendors)
     
-    return render_template('vendor_compare.html', vendors=all_vendors) 
+    return render_template('vendor_compare.html', vendors=all_vendors)
+
+@main_bp.route('/gvl_history', methods=['GET', 'POST'])
+def gvl_history():
+    # Get list of files from archive_processed directory
+    archive_dir = Config.ARCHIVE_PROCESSED_DIR
+    json_files = []
+    try:
+        json_files = sorted([f for f in os.listdir(archive_dir) if f.endswith('.json')], reverse=True)
+    except Exception as e:
+        current_app.logger.error(f"Error reading archive directory: {e}")
+        flash("Error reading archive directory", "error")
+        return redirect(url_for('main.index'))
+
+    if not json_files:
+        flash("No processed files found in archive", "error")
+        return redirect(url_for('main.index'))
+
+    vendor_groups = {}
+    files_selected = False
+
+    if request.method == 'POST':
+        files_selected = True
+        file1 = request.form.get('file1')
+        file2 = request.form.get('file2')
+
+        try:
+            # Load both JSON files
+            with open(os.path.join(archive_dir, file1), 'r') as f:
+                data1 = json.load(f)
+            with open(os.path.join(archive_dir, file2), 'r') as f:
+                data2 = json.load(f)
+
+            # Convert vendor lists to dictionaries for easier comparison
+            vendors1 = {str(v.get('vendor_id', '')): v for v in data1}
+            vendors2 = {str(v.get('vendor_id', '')): v for v in data2}
+
+            # Group fields by type
+            fields = (
+                [f'P{i}' for i in range(1, 11)] +  # P1 to P10
+                ['SP1', 'SP2'] +  # Special Purposes
+                ['F1', 'F2', 'F3'] +  # Features
+                ['SF1', 'SF2']  # Special Features
+            )
+
+            # Find all vendors that exist in either file
+            all_vendor_ids = set(vendors1.keys()) | set(vendors2.keys())
+
+            # Track which fields changed for each vendor
+            for vendor_id in all_vendor_ids:
+                v1 = vendors1.get(vendor_id, {})
+                v2 = vendors2.get(vendor_id, {})
+
+                # Skip if vendor doesn't exist in both files
+                if not v1 or not v2:
+                    continue
+
+                has_changes = False
+                old_values = {}
+                new_values = {}
+                changed_fields = set()
+
+                # Compare all fields
+                for field in fields:
+                    val1 = int(v1.get(field, 0))
+                    val2 = int(v2.get(field, 0))
+                    
+                    # Store both values
+                    old_values[field] = val2
+                    new_values[field] = val1
+                    
+                    # Track if this field changed
+                    if val1 != val2:
+                        has_changes = True
+                        changed_fields.add(field)
+
+                # Only include vendors that have changes
+                if has_changes:
+                    vendor_groups[vendor_id] = {
+                        'name': v1.get('vendor_name', 'N/A'),
+                        'old_values': old_values,
+                        'new_values': new_values,
+                        'changed_fields': changed_fields
+                    }
+
+        except Exception as e:
+            current_app.logger.error(f"Error comparing files: {e}")
+            flash(f"Error comparing files: {str(e)}", "error")
+            return redirect(url_for('main.gvl_history'))
+
+    return render_template('gvl_history.html',
+                         files=json_files,
+                         vendor_groups=vendor_groups,
+                         files_selected=files_selected,
+                         file1=request.form.get('file1') if request.method == 'POST' else None,
+                         file2=request.form.get('file2') if request.method == 'POST' else None) 

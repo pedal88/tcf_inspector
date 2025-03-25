@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+.badge {
+    width: 24px;
+    height: 20px;
+    line-height: 20px;
+    font-size: 10px;
+    padding: 0;
+    opacity: 0.3;
+}
+
+.text-light-gray {
+    color: #999;
+    opacity: 0.3;
+}
+
+.badge.bg-consent {
+    background-color: #28a745 !important;
+}
+
+.badge.bg-legitimate {
+    background-color: #0d6efd !important;
+}
+
+.badge.bg-combined {
+    background: linear-gradient(90deg, #28a745 0%, #0d6efd 100%);
+}
+
+.legend-container {
+    padding: 10px 0;
+    border-bottom: 1px solid #dee2e6;
+    margin-bottom: 15px;
+}
+
+.table td {
+    text-align: center;
+    vertical-align: middle;
+}
+
+.border-top {
+    border-top: 4px solid #dee2e6 !important;
+}
+
+.border-bottom {
+    border-bottom: 4px solid #dee2e6 !important;
+}
+
+/* Make badges in changed fields fully visible */
+.changed-field .badge {
+    opacity: 1;
+}
+</style>
+
+<div class="container mt-4">
+    <h2>GVL Version History Comparison</h2>
+    
+    <div class="legend-container">
+        <div class="d-flex gap-3">
+            <span><span class="badge text-light-gray">0</span> No Legal Basis</span>
+            <span><span class="badge bg-consent text-white">1</span> Consent Only</span>
+            <span><span class="badge bg-legitimate text-white">2</span> Legitimate Interest Only</span>
+            <span><span class="badge bg-combined text-white">3</span> Consent & Legitimate Interest</span>
+        </div>
+    </div>
+    
+    <form method="POST" action="{{ url_for('main.gvl_history') }}" class="mb-4">
+        <div class="row">
+            <div class="col-md-5">
+                <label for="file1" class="form-label">First Version (Most Recent)</label>
+                <select name="file1" id="file1" class="form-select" required>
+                    {% for file in files %}
+                        <option value="{{ file }}" {% if loop.first %}selected{% endif %}>
+                            {{ file.split('_')[0] }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-5">
+                <label for="file2" class="form-label">Second Version (Previous)</label>
+                <select name="file2" id="file2" class="form-select" required>
+                    {% for file in files %}
+                        <option value="{{ file }}" {% if loop.index == 2 %}selected{% endif %}>
+                            {{ file.split('_')[0] }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">Compare Versions</button>
+            </div>
+        </div>
+    </form>
+
+    {% if vendor_groups %}
+        <div class="table-responsive">
+            <table class="table table-striped table-bordered table-sm">
+                <thead>
+                    <tr>
+                        <th>Vendor ID</th>
+                        <th>Vendor Name</th>
+                        <th>Version</th>
+                        {% for i in range(1, 11) %}
+                            <th class="px-2">P{{ i }}</th>
+                        {% endfor %}
+                        <th class="px-2">SP1</th>
+                        <th class="px-2">SP2</th>
+                        <th class="px-2">F1</th>
+                        <th class="px-2">F2</th>
+                        <th class="px-2">F3</th>
+                        <th class="px-2">SF1</th>
+                        <th class="px-2">SF2</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for vendor_id, vendor_data in vendor_groups.items()|sort %}
+                        <tr class="border-top">
+                            <td rowspan="2">{{ vendor_id }}</td>
+                            <td rowspan="2">{{ vendor_data.name }}</td>
+                            <td>{{ file2.split('_')[0] }}</td>
+                            {% for i in range(1, 11) %}
+                                {% set field = 'P' ~ i %}
+                                <td class="px-2 {% if field in vendor_data.changed_fields %}changed-field{% endif %}">
+                                    {% set value = vendor_data.old_values[field] %}
+                                    <span class="badge {% if value == 0 %}text-light-gray{% elif value == 1 %}bg-consent text-white{% elif value == 2 %}bg-legitimate text-white{% else %}bg-combined text-white{% endif %}"
+                                          title="{% if value == 0 %}No Legal Basis{% elif value == 1 %}Consent Only{% elif value == 2 %}Legitimate Interest Only{% else %}Consent & Legitimate Interest{% endif %}">
+                                        {{ value }}
+                                    </span>
+                                </td>
+                            {% endfor %}
+                            {% for field in ['SP1', 'SP2', 'F1', 'F2', 'F3', 'SF1', 'SF2'] %}
+                                <td class="px-2 {% if field in vendor_data.changed_fields %}changed-field{% endif %}">
+                                    {% set value = vendor_data.old_values[field] %}
+                                    <span class="badge {% if value == 0 %}text-light-gray{% elif value == 1 %}bg-consent text-white{% elif value == 2 %}bg-legitimate text-white{% else %}bg-combined text-white{% endif %}"
+                                          title="{% if value == 0 %}No Legal Basis{% elif value == 1 %}Consent Only{% elif value == 2 %}Legitimate Interest Only{% else %}Consent & Legitimate Interest{% endif %}">
+                                        {{ value }}
+                                    </span>
+                                </td>
+                            {% endfor %}
+                        </tr>
+                        <tr class="border-bottom">
+                            <td>{{ file1.split('_')[0] }}</td>
+                            {% for i in range(1, 11) %}
+                                {% set field = 'P' ~ i %}
+                                <td class="px-2 {% if field in vendor_data.changed_fields %}changed-field{% endif %}">
+                                    {% set value = vendor_data.new_values[field] %}
+                                    <span class="badge {% if value == 0 %}text-light-gray{% elif value == 1 %}bg-consent text-white{% elif value == 2 %}bg-legitimate text-white{% else %}bg-combined text-white{% endif %}"
+                                          title="{% if value == 0 %}No Legal Basis{% elif value == 1 %}Consent Only{% elif value == 2 %}Legitimate Interest Only{% else %}Consent & Legitimate Interest{% endif %}">
+                                        {{ value }}
+                                    </span>
+                                </td>
+                            {% endfor %}
+                            {% for field in ['SP1', 'SP2', 'F1', 'F2', 'F3', 'SF1', 'SF2'] %}
+                                <td class="px-2 {% if field in vendor_data.changed_fields %}changed-field{% endif %}">
+                                    {% set value = vendor_data.new_values[field] %}
+                                    <span class="badge {% if value == 0 %}text-light-gray{% elif value == 1 %}bg-consent text-white{% elif value == 2 %}bg-legitimate text-white{% else %}bg-combined text-white{% endif %}"
+                                          title="{% if value == 0 %}No Legal Basis{% elif value == 1 %}Consent Only{% elif value == 2 %}Legitimate Interest Only{% else %}Consent & Legitimate Interest{% endif %}">
+                                        {{ value }}
+                                    </span>
+                                </td>
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% elif files_selected %}
+        <div class="alert alert-info">
+            No differences found between the selected versions.
+        </div>
+    {% endif %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const file1Select = document.getElementById('file1');
+    const file2Select = document.getElementById('file2');
+
+    // Prevent selecting the same file in both dropdowns
+    file1Select.addEventListener('change', function() {
+        Array.from(file2Select.options).forEach(option => {
+            option.disabled = option.value === file1Select.value;
+        });
+    });
+
+    file2Select.addEventListener('change', function() {
+        Array.from(file1Select.options).forEach(option => {
+            option.disabled = option.value === file2Select.value;
+        });
+    });
+
+    // Trigger initial disable state
+    file1Select.dispatchEvent(new Event('change'));
+});
+</script>
+{% endblock %} 
