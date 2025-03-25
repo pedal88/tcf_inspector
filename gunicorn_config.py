@@ -5,4 +5,5 @@ timeout = 120
 worker_class = "sync"
 accesslog = "-"
 errorlog = "-"
-capture_output = True 
+capture_output = True
+wsgi_app = "wsgi:app"  # Point to the app object in wsgi.py 
