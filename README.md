@@ -39,3 +39,6 @@ python download_versions.py
 ## License
 
 MIT License 
+
+## Links
+https://iabtcf.com/api/core/classes/gvl.html

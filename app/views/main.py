@@ -488,4 +488,32 @@ def gvl_history():
                          vendor_groups=vendor_groups,
                          files_selected=files_selected,
                          file1=request.form.get('file1') if request.method == 'POST' else None,
-                         file2=request.form.get('file2') if request.method == 'POST' else None) 
+                         file2=request.form.get('file2') if request.method == 'POST' else None)
+
+@main_bp.route('/purposes')
+def purposes():
+    try:
+        current_file_path = os.path.join(Config.CURRENT_DATA_DIR, 'current_vendor_list.json')
+        allowed_legal_basis_path = os.path.join(Config.VENDOR_METADATA_DIR, 'allowed_legal_basis.json')
+        
+        with open(current_file_path, 'r') as f:
+            vendor_list = json.load(f)
+            
+        with open(allowed_legal_basis_path, 'r') as f:
+            allowed_legal_basis = json.load(f)
+
+        # Sort the dictionaries by numeric ID
+        sorted_purposes = dict(sorted(vendor_list.get('purposes', {}).items(), key=lambda x: int(x[0])))
+        sorted_special_purposes = dict(sorted(vendor_list.get('specialPurposes', {}).items(), key=lambda x: int(x[0])))
+        sorted_features = dict(sorted(vendor_list.get('features', {}).items(), key=lambda x: int(x[0])))
+        sorted_special_features = dict(sorted(vendor_list.get('specialFeatures', {}).items(), key=lambda x: int(x[0])))
+            
+        return render_template('purposes.html',
+                             purposes=sorted_purposes,
+                             special_purposes=sorted_special_purposes,
+                             features=sorted_features,
+                             special_features=sorted_special_features,
+                             allowed_legal_basis=allowed_legal_basis)
+    except Exception as e:
+        current_app.logger.error(f"Error loading purposes data: {str(e)}")
+        return render_template('error.html', error="Failed to load purposes data") 

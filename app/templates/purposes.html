@@ -1,0 +1,363 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+.table th {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+.col-id {
+    width: 80px;
+}
+
+.col-name {
+    width: 200px;
+}
+
+.col-description {
+    min-width: 400px;
+    max-width: 500px;
+}
+
+.col-legal-basis {
+    width: 150px;
+}
+
+.purpose-id {
+    font-weight: bold;
+    color: #6c757d;
+    white-space: nowrap;
+}
+
+.info-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background-color: #6c757d;
+    color: white;
+    font-size: 12px;
+    margin-left: 0.5rem;
+    cursor: help;
+    position: relative;
+}
+
+.info-icon:hover {
+    background-color: #5a6268;
+}
+
+.info-icon:hover .legal-description {
+    display: block;
+}
+
+.legal-description {
+    display: none;
+    padding: 1rem;
+    background-color: #fff;
+    border-radius: 0.25rem;
+    white-space: normal;
+    margin: 0.5rem 0;
+    border: 1px solid #dee2e6;
+    position: absolute;
+    left: 24px;
+    top: -10px;
+    width: 600px;
+    z-index: 1000;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    font-weight: normal;
+    text-align: left;
+    font-size: 0.875rem;
+    color: #212529;
+    line-height: 1.5;
+}
+
+.legal-description strong {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #495057;
+}
+
+.legal-description-text {
+    display: block;
+    white-space: pre-line;
+}
+
+.description-cell {
+    position: relative;
+}
+
+.badge {
+    padding: 0.25rem 0.5rem;
+    margin-right: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: normal;
+}
+
+.badge.bg-consent {
+    background-color: #28a745 !important;
+    color: white;
+}
+
+.badge.bg-legitimate {
+    background-color: #0d6efd !important;
+    color: white;
+}
+
+.badge.bg-combined {
+    background: linear-gradient(90deg, #28a745 0%, #0d6efd 100%);
+    color: white;
+}
+
+.legend-container {
+    padding: 10px 0;
+    border-bottom: 1px solid #dee2e6;
+    margin-bottom: 15px;
+}
+
+.opt-out-info {
+    font-size: 0.75rem;
+    color: #6c757d;
+    margin-top: 0.25rem;
+    font-style: italic;
+}
+
+.legal-basis-cell {
+    white-space: nowrap;
+}
+
+.table-wrapper {
+    margin-bottom: 2rem;
+}
+</style>
+
+<div class="container-fluid mt-4">
+    <h2>TCF Purposes Overview</h2>
+    
+    <div class="legend-container">
+        <div class="d-flex gap-3">
+            <span><span class="badge bg-consent">C</span> Consent Required</span>
+            <span><span class="badge bg-legitimate">LI</span> Legitimate Interest</span>
+            <span><span class="badge bg-combined">C+LI</span> Both Allowed</span>
+        </div>
+    </div>
+    
+    <!-- Standard Purposes -->
+    <div class="table-wrapper">
+        <h3 class="section-header">Purposes</h3>
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th class="col-id">ID</th>
+                    <th class="col-name">Name</th>
+                    <th class="col-description">Description</th>
+                    <th class="col-legal-basis">Legal Basis</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for id, purpose in purposes.items() %}
+                <tr>
+                    <td class="purpose-id">P{{ purpose.id }}</td>
+                    <td>{{ purpose.name }}</td>
+                    <td class="description-cell">
+                        {{ purpose.description }}
+                        <span class="info-icon" title="Legal description">
+                            i
+                            <div class="legal-description">
+                                <strong>Legal Description:</strong>
+                                <span class="legal-description-text">{{ purpose.descriptionLegal }}</span>
+                            </div>
+                        </span>
+                    </td>
+                    <td class="legal-basis-cell">
+                        {% set purpose_id = purpose.id|string %}
+                        {% if allowed_legal_basis.purposes[purpose_id].consent and allowed_legal_basis.purposes[purpose_id].legitimate_interest %}
+                            <span class="badge bg-combined" title="Both Consent and Legitimate Interest allowed">C+LI</span>
+                            {% if allowed_legal_basis.purposes[purpose_id].can_opt_out %}
+                                <div class="opt-out-info">Users can opt out when LI is used</div>
+                            {% else %}
+                                <div class="opt-out-info">No opt-out for LI</div>
+                            {% endif %}
+                        {% elif allowed_legal_basis.purposes[purpose_id].consent %}
+                            <span class="badge bg-consent" title="Consent required">C</span>
+                        {% elif allowed_legal_basis.purposes[purpose_id].legitimate_interest %}
+                            <span class="badge bg-legitimate" title="Legitimate Interest allowed">LI</span>
+                            {% if allowed_legal_basis.purposes[purpose_id].can_opt_out %}
+                                <div class="opt-out-info">Users can opt out</div>
+                            {% else %}
+                                <div class="opt-out-info">No opt-out available</div>
+                            {% endif %}
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Special Purposes -->
+    <div class="table-wrapper">
+        <h3 class="section-header">Special Purposes</h3>
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th class="col-id">ID</th>
+                    <th class="col-name">Name</th>
+                    <th class="col-description">Description</th>
+                    <th class="col-legal-basis">Legal Basis</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for id, purpose in special_purposes.items() %}
+                <tr>
+                    <td class="purpose-id">SP{{ purpose.id }}</td>
+                    <td>{{ purpose.name }}</td>
+                    <td class="description-cell">
+                        {{ purpose.description }}
+                        <span class="info-icon" title="Legal description">
+                            i
+                            <div class="legal-description">
+                                <strong>Legal Description:</strong>
+                                <span class="legal-description-text">{{ purpose.descriptionLegal }}</span>
+                            </div>
+                        </span>
+                    </td>
+                    <td class="legal-basis-cell">
+                        {% set purpose_id = purpose.id|string %}
+                        {% if allowed_legal_basis.special_purposes[purpose_id].consent and allowed_legal_basis.special_purposes[purpose_id].legitimate_interest %}
+                            <span class="badge bg-combined" title="Both Consent and Legitimate Interest allowed">C+LI</span>
+                            {% if allowed_legal_basis.special_purposes[purpose_id].can_opt_out %}
+                                <div class="opt-out-info">Users can opt out when LI is used</div>
+                            {% else %}
+                                <div class="opt-out-info">No opt-out for LI</div>
+                            {% endif %}
+                        {% elif allowed_legal_basis.special_purposes[purpose_id].consent %}
+                            <span class="badge bg-consent" title="Consent required">C</span>
+                        {% elif allowed_legal_basis.special_purposes[purpose_id].legitimate_interest %}
+                            <span class="badge bg-legitimate" title="Legitimate Interest allowed">LI</span>
+                            {% if allowed_legal_basis.special_purposes[purpose_id].can_opt_out %}
+                                <div class="opt-out-info">Users can opt out</div>
+                            {% else %}
+                                <div class="opt-out-info">No opt-out available</div>
+                            {% endif %}
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Features -->
+    <div class="table-wrapper">
+        <h3 class="section-header">Features</h3>
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th class="col-id">ID</th>
+                    <th class="col-name">Name</th>
+                    <th class="col-description">Description</th>
+                    <th class="col-legal-basis">Legal Basis</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for id, feature in features.items() %}
+                <tr>
+                    <td class="purpose-id">F{{ feature.id }}</td>
+                    <td>{{ feature.name }}</td>
+                    <td class="description-cell">
+                        {{ feature.description }}
+                        <span class="info-icon" title="Legal description">
+                            i
+                            <div class="legal-description">
+                                <strong>Legal Description:</strong>
+                                <span class="legal-description-text">{{ feature.descriptionLegal }}</span>
+                            </div>
+                        </span>
+                    </td>
+                    <td class="legal-basis-cell">
+                        {% set feature_id = feature.id|string %}
+                        {% if allowed_legal_basis.features[feature_id].consent and allowed_legal_basis.features[feature_id].legitimate_interest %}
+                            <span class="badge bg-combined" title="Both Consent and Legitimate Interest allowed">C+LI</span>
+                            {% if allowed_legal_basis.features[feature_id].can_opt_out %}
+                                <div class="opt-out-info">Users can opt out when LI is used</div>
+                            {% else %}
+                                <div class="opt-out-info">No opt-out for LI</div>
+                            {% endif %}
+                        {% elif allowed_legal_basis.features[feature_id].consent %}
+                            <span class="badge bg-consent" title="Consent required">C</span>
+                        {% elif allowed_legal_basis.features[feature_id].legitimate_interest %}
+                            <span class="badge bg-legitimate" title="Legitimate Interest allowed">LI</span>
+                            {% if allowed_legal_basis.features[feature_id].can_opt_out %}
+                                <div class="opt-out-info">Users can opt out</div>
+                            {% else %}
+                                <div class="opt-out-info">No opt-out available</div>
+                            {% endif %}
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Special Features -->
+    <div class="table-wrapper">
+        <h3 class="section-header">Special Features</h3>
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th class="col-id">ID</th>
+                    <th class="col-name">Name</th>
+                    <th class="col-description">Description</th>
+                    <th class="col-legal-basis">Legal Basis</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for id, feature in special_features.items() %}
+                <tr>
+                    <td class="purpose-id">SF{{ feature.id }}</td>
+                    <td>{{ feature.name }}</td>
+                    <td class="description-cell">
+                        {{ feature.description }}
+                        <span class="info-icon" title="Legal description">
+                            i
+                            <div class="legal-description">
+                                <strong>Legal Description:</strong>
+                                <span class="legal-description-text">{{ feature.descriptionLegal }}</span>
+                            </div>
+                        </span>
+                    </td>
+                    <td class="legal-basis-cell">
+                        {% set feature_id = feature.id|string %}
+                        {% if allowed_legal_basis.special_features[feature_id].consent and allowed_legal_basis.special_features[feature_id].legitimate_interest %}
+                            <span class="badge bg-combined" title="Both Consent and Legitimate Interest allowed">C+LI</span>
+                            {% if allowed_legal_basis.special_features[feature_id].can_opt_out %}
+                                <div class="opt-out-info">Users can opt out when LI is used</div>
+                            {% else %}
+                                <div class="opt-out-info">No opt-out for LI</div>
+                            {% endif %}
+                        {% elif allowed_legal_basis.special_features[feature_id].consent %}
+                            <span class="badge bg-consent" title="Consent required">C</span>
+                        {% elif allowed_legal_basis.special_features[feature_id].legitimate_interest %}
+                            <span class="badge bg-legitimate" title="Legitimate Interest allowed">LI</span>
+                            {% if allowed_legal_basis.special_features[feature_id].can_opt_out %}
+                                <div class="opt-out-info">Users can opt out</div>
+                            {% else %}
+                                <div class="opt-out-info">No opt-out available</div>
+                            {% endif %}
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %} 

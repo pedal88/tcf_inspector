@@ -1,0 +1,95 @@
+{
+    "purposes": {
+        "1": {
+            "consent": true,
+            "legitimate_interest": false,
+            "can_opt_out": false
+        },
+        "2": {
+            "consent": true,
+            "legitimate_interest": true,
+            "can_opt_out": true
+        },
+        "3": {
+            "consent": true,
+            "legitimate_interest": false,
+            "can_opt_out": false
+        },
+        "4": {
+            "consent": true,
+            "legitimate_interest": false,
+            "can_opt_out": false
+        },
+        "5": {
+            "consent": true,
+            "legitimate_interest": false,
+            "can_opt_out": false
+        },
+        "6": {
+            "consent": true,
+            "legitimate_interest": false,
+            "can_opt_out": false
+        },
+        "7": {
+            "consent": true,
+            "legitimate_interest": true,
+            "can_opt_out": true
+        },
+        "8": {
+            "consent": true,
+            "legitimate_interest": true,
+            "can_opt_out": true
+        },
+        "9": {
+            "consent": true,
+            "legitimate_interest": true,
+            "can_opt_out": true
+        },
+        "10": {
+            "consent": true,
+            "legitimate_interest": true,
+            "can_opt_out": true
+        }
+    },
+    "special_purposes": {
+        "1": {
+            "consent": false,
+            "legitimate_interest": true,
+            "can_opt_out": false
+        },
+        "2": {
+            "consent": false,
+            "legitimate_interest": true,
+            "can_opt_out": false
+        }
+    },
+    "features": {
+        "1": {
+            "consent": false,
+            "legitimate_interest": true,
+            "can_opt_out": true
+        },
+        "2": {
+            "consent": false,
+            "legitimate_interest": true,
+            "can_opt_out": true
+        },
+        "3": {
+            "consent": false,
+            "legitimate_interest": true,
+            "can_opt_out": true
+        }
+    },
+    "special_features": {
+        "1": {
+            "consent": true,
+            "legitimate_interest": false,
+            "can_opt_out": false
+        },
+        "2": {
+            "consent": true,
+            "legitimate_interest": false,
+            "can_opt_out": false
+        }
+    }
+} 
