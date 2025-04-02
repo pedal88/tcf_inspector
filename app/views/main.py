@@ -516,4 +516,93 @@ def purposes():
                              allowed_legal_basis=allowed_legal_basis)
     except Exception as e:
         current_app.logger.error(f"Error loading purposes data: {str(e)}")
-        return render_template('error.html', error="Failed to load purposes data") 
+        return render_template('error.html', error="Failed to load purposes data")
+
+@main_bp.route('/trends')
+def trends():
+    try:
+        # Get all vendor list files sorted by date
+        archive_dir = Config.ARCHIVE_PROCESSED_DIR
+        vendor_files = []
+        for filename in os.listdir(archive_dir):
+            if filename.endswith('.json'):
+                date_str = filename.split('_')[0]  # Extract date from filename
+                file_path = os.path.join(archive_dir, filename)
+                vendor_files.append((date_str, file_path))
+        
+        vendor_files.sort()  # Sort by date
+
+        # Initialize data structures for trend analysis
+        trend_data = {
+            'dates': [],
+            'vendor_counts': [],
+            'purpose_stats': [],
+            'special_purpose_stats': [],
+            'feature_stats': [],
+            'special_feature_stats': [],
+            'legal_basis_trends': []
+        }
+
+        # Analyze each file
+        for date_str, file_path in vendor_files:
+            with open(file_path, 'r') as f:
+                data = json.load(f)
+                
+                # Basic counts
+                vendor_count = len(data)  # data is a list of vendors
+                
+                # Get the original GVL file to get purposes/features info
+                # Convert filename from processed format to original format
+                date_part = os.path.basename(file_path).split('_')[0]  # Get YYYY-MM-DD
+                version_part = os.path.basename(file_path).split('_')[-1]  # Get vXX.json
+                
+                # Try to find matching original file
+                original_files = [f for f in os.listdir(Config.ARCHIVE_DATA_DIR) 
+                                if f.startswith(date_part) and f.endswith(version_part)]
+                
+                purposes_count = 0
+                special_purposes_count = 0
+                features_count = 0
+                special_features_count = 0
+                
+                if original_files:
+                    original_file_path = os.path.join(Config.ARCHIVE_DATA_DIR, original_files[0])
+                    with open(original_file_path, 'r') as f:
+                        original_data = json.load(f)
+                        purposes_count = len(original_data.get('purposes', {}))
+                        special_purposes_count = len(original_data.get('specialPurposes', {}))
+                        features_count = len(original_data.get('features', {}))
+                        special_features_count = len(original_data.get('specialFeatures', {}))
+
+                # Analyze legal basis usage
+                legal_basis_stats = {
+                    'consent_only': 0,
+                    'legitimate_interest_only': 0,
+                    'both': 0
+                }
+
+                for vendor in data:  # data is a list of vendors
+                    vendor_purposes = [str(p) for p in vendor.get('purposes', [])]
+                    vendor_legint = [str(p) for p in vendor.get('legitimateInterests', [])]
+                    
+                    # Count vendors using different combinations of legal bases
+                    if vendor_purposes and vendor_legint:
+                        legal_basis_stats['both'] += 1
+                    elif vendor_purposes:
+                        legal_basis_stats['consent_only'] += 1
+                    elif vendor_legint:
+                        legal_basis_stats['legitimate_interest_only'] += 1
+
+                # Store the analysis
+                trend_data['dates'].append(date_str)
+                trend_data['vendor_counts'].append(vendor_count)
+                trend_data['purpose_stats'].append(purposes_count)
+                trend_data['special_purpose_stats'].append(special_purposes_count)
+                trend_data['feature_stats'].append(features_count)
+                trend_data['special_feature_stats'].append(special_features_count)
+                trend_data['legal_basis_trends'].append(legal_basis_stats)
+
+        return render_template('trends.html', trend_data=trend_data)
+    except Exception as e:
+        current_app.logger.error(f"Error analyzing trends: {str(e)}")
+        return render_template('error.html', error="Failed to analyze vendor list trends") 

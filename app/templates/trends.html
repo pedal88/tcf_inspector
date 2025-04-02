@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="mt-4 mb-4">TCF Trends Analysis</h1>
+
+    <div class="row">
+        <!-- Vendor Count Trend -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Number of Vendors Over Time</h5>
+                    <canvas id="vendorTrendChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Purpose/Feature Count Trends -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Number of Purposes and Features</h5>
+                    <canvas id="purposeFeatureChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Legal Basis Trends -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Legal Basis Usage Trends</h5>
+                    <canvas id="legalBasisChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Key Findings -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Key Findings</h5>
+                    <div id="keyFindings">
+                        <!-- Will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Include Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    // Prepare the data
+    const dates = {{ trend_data.dates|tojson }};
+    const vendorCounts = {{ trend_data.vendor_counts|tojson }};
+    const purposeStats = {{ trend_data.purpose_stats|tojson }};
+    const specialPurposeStats = {{ trend_data.special_purpose_stats|tojson }};
+    const featureStats = {{ trend_data.feature_stats|tojson }};
+    const specialFeatureStats = {{ trend_data.special_feature_stats|tojson }};
+    const legalBasisTrends = {{ trend_data.legal_basis_trends|tojson }};
+
+    // Format dates for display
+    const formattedDates = dates.map(date => {
+        const [year, month, day] = date.split('-');
+        return `${year}-${month}`;
+    });
+
+    // Vendor Count Chart
+    new Chart(document.getElementById('vendorTrendChart'), {
+        type: 'line',
+        data: {
+            labels: formattedDates,
+            datasets: [{
+                label: 'Number of Vendors',
+                data: vendorCounts,
+                borderColor: 'rgb(75, 192, 192)',
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Purpose and Feature Chart
+    new Chart(document.getElementById('purposeFeatureChart'), {
+        type: 'line',
+        data: {
+            labels: formattedDates,
+            datasets: [{
+                label: 'Purposes',
+                data: purposeStats,
+                borderColor: 'rgb(255, 99, 132)',
+                tension: 0.1
+            }, {
+                label: 'Special Purposes',
+                data: specialPurposeStats,
+                borderColor: 'rgb(54, 162, 235)',
+                tension: 0.1
+            }, {
+                label: 'Features',
+                data: featureStats,
+                borderColor: 'rgb(255, 206, 86)',
+                tension: 0.1
+            }, {
+                label: 'Special Features',
+                data: specialFeatureStats,
+                borderColor: 'rgb(75, 192, 192)',
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Legal Basis Chart
+    new Chart(document.getElementById('legalBasisChart'), {
+        type: 'line',
+        data: {
+            labels: formattedDates,
+            datasets: [{
+                label: 'Consent Only',
+                data: legalBasisTrends.map(stat => stat.consent_only),
+                borderColor: 'rgb(255, 99, 132)',
+                tension: 0.1
+            }, {
+                label: 'Legitimate Interest Only',
+                data: legalBasisTrends.map(stat => stat.legitimate_interest_only),
+                borderColor: 'rgb(54, 162, 235)',
+                tension: 0.1
+            }, {
+                label: 'Both',
+                data: legalBasisTrends.map(stat => stat.both),
+                borderColor: 'rgb(75, 192, 192)',
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Calculate and display key findings
+    function calculateTrends() {
+        const findings = [];
+        
+        // Vendor count trend
+        const firstVendorCount = vendorCounts[0];
+        const lastVendorCount = vendorCounts[vendorCounts.length - 1];
+        const vendorGrowth = ((lastVendorCount - firstVendorCount) / firstVendorCount * 100).toFixed(1);
+        
+        findings.push(`<p><strong>Vendor Growth:</strong> ${vendorGrowth}% increase in vendors from ${dates[0]} to ${dates[dates.length - 1]}</p>`);
+
+        // Purpose/Feature changes
+        const purposeGrowth = ((purposeStats[purposeStats.length - 1] - purposeStats[0]) / purposeStats[0] * 100).toFixed(1);
+        findings.push(`<p><strong>Purposes:</strong> ${purposeGrowth}% change in number of purposes</p>`);
+
+        // Legal basis trends
+        const firstLegalBasis = legalBasisTrends[0];
+        const lastLegalBasis = legalBasisTrends[legalBasisTrends.length - 1];
+        const bothChange = ((lastLegalBasis.both - firstLegalBasis.both) / firstLegalBasis.both * 100).toFixed(1);
+        
+        findings.push(`<p><strong>Legal Basis Trend:</strong> ${bothChange}% change in vendors using both consent and legitimate interest</p>`);
+
+        // Update the findings section
+        document.getElementById('keyFindings').innerHTML = findings.join('');
+    }
+
+    calculateTrends();
+</script>
+{% endblock %} 

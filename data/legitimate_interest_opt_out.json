@@ -1,0 +1,78 @@
+{
+    "purposes": {
+        "1": {
+            "allows_li": false,
+            "can_opt_out": false
+        },
+        "2": {
+            "allows_li": true,
+            "can_opt_out": true
+        },
+        "3": {
+            "allows_li": false,
+            "can_opt_out": false
+        },
+        "4": {
+            "allows_li": false,
+            "can_opt_out": false
+        },
+        "5": {
+            "allows_li": false,
+            "can_opt_out": false
+        },
+        "6": {
+            "allows_li": false,
+            "can_opt_out": false
+        },
+        "7": {
+            "allows_li": true,
+            "can_opt_out": true
+        },
+        "8": {
+            "allows_li": true,
+            "can_opt_out": true
+        },
+        "9": {
+            "allows_li": true,
+            "can_opt_out": true
+        },
+        "10": {
+            "allows_li": true,
+            "can_opt_out": true
+        }
+    },
+    "special_purposes": {
+        "1": {
+            "allows_li": true,
+            "can_opt_out": false
+        },
+        "2": {
+            "allows_li": true,
+            "can_opt_out": false
+        }
+    },
+    "features": {
+        "1": {
+            "allows_li": true,
+            "can_opt_out": true
+        },
+        "2": {
+            "allows_li": true,
+            "can_opt_out": true
+        },
+        "3": {
+            "allows_li": true,
+            "can_opt_out": true
+        }
+    },
+    "special_features": {
+        "1": {
+            "allows_li": false,
+            "can_opt_out": false
+        },
+        "2": {
+            "allows_li": false,
+            "can_opt_out": false
+        }
+    }
+} 

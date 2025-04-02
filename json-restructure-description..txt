@@ -1,22 +1,22 @@
-
-This are the purposes, special purposes, features and special features described in the vendor list:
-P1
-P2
-P3
-P4
-P5
-P6
-P7
-P8
-P9
-P10
-SP1
-SP2
-F1
-F2
-F3
-SF1
-SF2
+RESTRUCTORE JSON FILE FOR P, SP, F and SF
+This are the purposes, special purposes, features and special features described in the vendor list. I have also added the allowed legal basis from the framework
+P1: Consent
+P2: Consent, Legitimate Interest
+P3: Consent
+P4: Consent
+P5: Consent
+P6: Consent
+P7: Consent, Legitimate Interest
+P8: Consent, Legitimate Interest
+P9: Consent, Legitimate Interest
+P10: Consent, Legitimate Interest
+SP1: Legitimate Interest
+SP2: Legitimate Interest
+F1: Legitimate Interest
+F2: Legitimate Interest
+F3: Legitimate Interest
+SF1: Consent
+SF2: Consent
 
 The two available legal basises are C (Consent) and LI (Legitimate Interest)
 
@@ -24,6 +24,8 @@ The gvl json describes the legal basis for the purposes in "purposes", "legIntPu
 The gvl json describes the special purposes in "specialPurposes"
 The gvl json describes the features in "features"
 The gvl json describes the special features in "specialFeatures"
+
+
 
 I want to restructure the gvl json to a simpler format where each P, SP, F and SF is represented by a value where:
 No legal basis = 0
@@ -35,5 +37,27 @@ The output should also include vendor_id and vendor_name before all the other fi
 
 Here is a sample of the original gvl json. Talk to me about this
 
+
+NEW CUSTOM VENDOR VALUES
+I want to be able to add more custom data to each vendor. Should I do this in the modified json files I allready have or separately? What are my options?
+
+This is the scoope and purpose:
+
+In the modified json file, add the following k-v pairs for each vendor:
+vendor_type
+mbl_audited
+vendor_status
+
+vendor_type represents predifined types such as "DSP", "SSP", "Ad Server" etc. One vendor should be able to have multiple types
+mbl_audited shold be a boolean where 0 represent not audited and 1 represent audited. The default value should be set to 0
+vendor_status can be the values "no", "partner" or "shortlist"
+
+Add a second row of table headers, to group the existing headers in this way
+vendor: ID, Name
+Custom vendor info: Status, Type, audited
+Purposes: P1-P10
+Special Purposes: SP1, SP2
+Features: F1-F3
+Special Features: SF1, SF2
 
 
